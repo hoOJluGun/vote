@@ -1,0 +1,138 @@
+version: "3.8"
+
+services:
+  security-manager:
+    build:
+      context: ./security
+      dockerfile: Dockerfile
+    image: vote-security:latest
+    container_name: vote-security-manager
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - TELEGRAM_ALERT_BOT_TOKEN=${TELEGRAM_ALERT_BOT_TOKEN}
+      - TELEGRAM_ALERT_CHAT_ID=${TELEGRAM_ALERT_CHAT_ID}
+      - WEBHOOK_ALERT_URL=${WEBHOOK_ALERT_URL}
+      - WEBHOOK_ALERT_TOKEN=${WEBHOOK_ALERT_TOKEN}
+      - WEB_DOMAIN=${WEB_DOMAIN}
+      - BOT_DOMAIN=${BOT_DOMAIN}
+      - API_DOMAIN=${API_DOMAIN}
+      - VERCEL_API_KEY=${VERCEL_API_KEY}
+      - VERCEL_TEAM_ID=${VERCEL_TEAM_ID}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - DIGITALOCEAN_API_KEY=${DIGITALOCEAN_API_KEY}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
+    volumes:
+      - ./security:/app/security
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.security.rule=Host(`security.${WEB_DOMAIN}`)"
+      - "traefik.http.routers.security.entrypoints=websecure"
+      - "traefik.http.routers.security.tls.certresolver=letsencrypt"
+      - "traefik.http.services.security.loadbalancer.server.port=3001"
+    depends_on:
+      - web
+      - bot
+    healthcheck:
+      test: ["CMD", "node", "health-check.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  monitoring-agent:
+    build:
+      context: ./security
+      dockerfile: Dockerfile.monitoring
+    image: vote-monitoring:latest
+    container_name: vote-monitoring-agent
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SECURITY_MANAGER_URL=http://security-manager:3001
+      - MONITORING_INTERVAL=30000
+      - MAX_FAILURES=3
+    volumes:
+      - ./security:/app/security
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    depends_on:
+      - security-manager
+    healthcheck:
+      test: ["CMD", "node", "monitoring-health-check.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backup-service:
+    build:
+      context: ./security
+      dockerfile: Dockerfile.backup
+    image: vote-backup:latest
+    container_name: vote-backup-service
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - BACKUP_INTERVAL=300000
+      - BACKUP_RETENTION=7
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BACKUP_BUCKET}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+    volumes:
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./security:/app/security
+    networks:
+      - proxy
+    depends_on:
+      - security-manager
+    healthcheck:
+      test: ["CMD", "node", "backup-health-check.js"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  recovery-service:
+    build:
+      context: ./security
+      dockerfile: Dockerfile.recovery
+    image: vote-recovery:latest
+    container_name: vote-recovery-service
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SECURITY_MANAGER_URL=http://security-manager:3001
+      - VERCEL_API_KEY=${VERCEL_API_KEY}
+      - VERCEL_TEAM_ID=${VERCEL_TEAM_ID}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - DIGITALOCEAN_API_KEY=${DIGITALOCEAN_API_KEY}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
+    volumes:
+      - ./security:/app/security
+      - ./backups:/app/backups
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    depends_on:
+      - security-manager
+    healthcheck:
+      test: ["CMD", "node", "recovery-health-check.js"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+networks:
+  proxy:
+    external: true

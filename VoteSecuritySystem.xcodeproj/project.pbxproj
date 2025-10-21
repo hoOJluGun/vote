@@ -1,0 +1,635 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1234567890ABCDEF1234567 /* VoteSecurityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234566 /* VoteSecurityApp.swift */; };
+		A1234567890ABCDEF1234569 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234568 /* Assets.xcassets */; };
+		A1234567890ABCDEF123456B /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF123456A /* Preview Assets.xcassets */; };
+		A1234567890ABCDEF123456D /* VoteSecurityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF123456C /* VoteSecurityCore.framework */; };
+		A1234567890ABCDEF123456F /* VoteSecurityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF123456E /* VoteSecurityCore.framework */; };
+		A1234567890ABCDEF1234571 /* VoteSecurityCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234570 /* VoteSecurityCLI.swift */; };
+		A1234567890ABCDEF1234573 /* VoteSecurityCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234572 /* VoteSecurityCore.swift */; };
+		A1234567890ABCDEF1234575 /* SecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234574 /* SecurityManager.swift */; };
+		A1234567890ABCDEF1234577 /* MonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234576 /* MonitoringService.swift */; };
+		A1234567890ABCDEF1234579 /* TokenRotationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF1234578 /* TokenRotationService.swift */; };
+		A1234567890ABCDEF123457B /* RecoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF123457A /* RecoveryService.swift */; };
+		A1234567890ABCDEF123457D /* VoteSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890ABCDEF123457C /* VoteSecurityTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A1234567890ABCDEF123457F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1234567890ABCDEF1234560 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1234567890ABCDEF1234565;
+			remoteInfo = VoteSecurityCore;
+		};
+		A1234567890ABCDEF1234581 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1234567890ABCDEF1234560 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1234567890ABCDEF1234565;
+			remoteInfo = VoteSecurityCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A1234567890ABCDEF1234563 /* VoteSecurityApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoteSecurityApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1234567890ABCDEF1234566 /* VoteSecurityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoteSecurityApp.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF1234568 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1234567890ABCDEF123456A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A1234567890ABCDEF123456C /* VoteSecurityCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = VoteSecurityCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1234567890ABCDEF123456E /* VoteSecurityCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = VoteSecurityCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1234567890ABCDEF1234570 /* VoteSecurityCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoteSecurityCLI.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF1234572 /* VoteSecurityCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoteSecurityCore.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF1234574 /* SecurityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityManager.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF1234576 /* MonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringService.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF1234578 /* TokenRotationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenRotationService.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF123457A /* RecoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryService.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF123457C /* VoteSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoteSecurityTests.swift; sourceTree = "<group>"; };
+		A1234567890ABCDEF123457E /* VoteSecurityTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoteSecurityTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1234567890ABCDEF1234560 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF123456D /* VoteSecurityCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF1234561 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF123456F /* VoteSecurityCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF1234562 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1234567890ABCDEF123455F /* VoteSecuritySystem */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF1234564 /* VoteSecurityApp */,
+				A1234567890ABCDEF1234567 /* VoteSecurityCLI */,
+				A1234567890ABCDEF1234568 /* VoteSecurityCore */,
+				A1234567890ABCDEF1234569 /* VoteSecurityTests */,
+				A1234567890ABCDEF123456A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1234567890ABCDEF1234564 /* VoteSecurityApp */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF1234566 /* VoteSecurityApp.swift */,
+				A1234567890ABCDEF1234568 /* Assets.xcassets */,
+				A1234567890ABCDEF123456A /* Preview Assets.xcassets */,
+			);
+			path = VoteSecurityApp;
+			sourceTree = "<group>";
+		};
+		A1234567890ABCDEF1234567 /* VoteSecurityCLI */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF1234570 /* VoteSecurityCLI.swift */,
+			);
+			path = VoteSecurityCLI;
+			sourceTree = "<group>";
+		};
+		A1234567890ABCDEF1234568 /* VoteSecurityCore */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF1234572 /* VoteSecurityCore.swift */,
+				A1234567890ABCDEF1234574 /* SecurityManager.swift */,
+				A1234567890ABCDEF1234576 /* MonitoringService.swift */,
+				A1234567890ABCDEF1234578 /* TokenRotationService.swift */,
+				A1234567890ABCDEF123457A /* RecoveryService.swift */,
+			);
+			path = VoteSecurityCore;
+			sourceTree = "<group>";
+		};
+		A1234567890ABCDEF1234569 /* VoteSecurityTests */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF123457C /* VoteSecurityTests.swift */,
+			);
+			path = VoteSecurityTests;
+			sourceTree = "<group>";
+		};
+		A1234567890ABCDEF123456A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890ABCDEF1234563 /* VoteSecurityApp.app */,
+				A1234567890ABCDEF123456C /* VoteSecurityCore.framework */,
+				A1234567890ABCDEF123456E /* VoteSecurityCore.framework */,
+				A1234567890ABCDEF123457E /* VoteSecurityTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		A1234567890ABCDEF1234561 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		A1234567890ABCDEF1234562 /* VoteSecurityApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1234567890ABCDEF1234582 /* Build configuration list for PBXNativeTarget "VoteSecurityApp" */;
+			buildPhases = (
+				A1234567890ABCDEF123455F /* Sources */,
+				A1234567890ABCDEF1234560 /* Frameworks */,
+				A1234567890ABCDEF1234561 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1234567890ABCDEF1234580 /* PBXTargetDependency */,
+			);
+			name = VoteSecurityApp;
+			productName = VoteSecurityApp;
+			productReference = A1234567890ABCDEF1234563 /* VoteSecurityApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A1234567890ABCDEF1234565 /* VoteSecurityCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1234567890ABCDEF1234583 /* Build configuration list for PBXNativeTarget "VoteSecurityCore" */;
+			buildPhases = (
+				A1234567890ABCDEF1234561 /* Sources */,
+				A1234567890ABCDEF1234562 /* Headers */,
+				A1234567890ABCDEF1234563 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoteSecurityCore;
+			productName = VoteSecurityCore;
+			productReference = A1234567890ABCDEF123456C /* VoteSecurityCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		A1234567890ABCDEF123456D /* VoteSecurityTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1234567890ABCDEF1234584 /* Build configuration list for PBXNativeTarget "VoteSecurityTests" */;
+			buildPhases = (
+				A1234567890ABCDEF123456E /* Sources */,
+				A1234567890ABCDEF123456F /* Frameworks */,
+				A1234567890ABCDEF1234570 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1234567890ABCDEF1234581 /* PBXTargetDependency */,
+			);
+			name = VoteSecurityTests;
+			productName = VoteSecurityTests;
+			productReference = A1234567890ABCDEF123457E /* VoteSecurityTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1234567890ABCDEF1234560 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1234567890ABCDEF1234562 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					A1234567890ABCDEF1234565 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					A1234567890ABCDEF123456D = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A1234567890ABCDEF1234563 /* Build configuration list for PBXProject "VoteSecuritySystem" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1234567890ABCDEF123455F /* VoteSecuritySystem */;
+			productRefGroup = A1234567890ABCDEF123456A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1234567890ABCDEF1234562 /* VoteSecurityApp */,
+				A1234567890ABCDEF1234565 /* VoteSecurityCore */,
+				A1234567890ABCDEF123456D /* VoteSecurityTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1234567890ABCDEF1234561 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF123456B /* Preview Assets.xcassets in Resources */,
+				A1234567890ABCDEF1234569 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF1234562 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF123456F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1234567890ABCDEF123455F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF1234567 /* VoteSecurityApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF1234561 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF1234573 /* VoteSecurityCore.swift in Sources */,
+				A1234567890ABCDEF1234575 /* SecurityManager.swift in Sources */,
+				A1234567890ABCDEF1234577 /* MonitoringService.swift in Sources */,
+				A1234567890ABCDEF1234579 /* TokenRotationService.swift in Sources */,
+				A1234567890ABCDEF123457B /* RecoveryService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1234567890ABCDEF123456E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890ABCDEF123457D /* VoteSecurityTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1234567890ABCDEF1234580 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1234567890ABCDEF1234565 /* VoteSecurityCore */;
+			targetProxy = A1234567890ABCDEF123457F /* PBXContainerItemProxy */;
+		};
+		A1234567890ABCDEF1234581 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1234567890ABCDEF1234565 /* VoteSecurityCore */;
+			targetProxy = A1234567890ABCDEF1234581 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A1234567890ABCDEF1234582 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1234567890ABCDEF1234583 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A1234567890ABCDEF1234584 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VoteSecurityApp/VoteSecurityApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"VoteSecurityApp/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A1234567890ABCDEF1234585 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VoteSecurityApp/VoteSecurityApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"VoteSecurityApp/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A1234567890ABCDEF1234586 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityCore;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1234567890ABCDEF1234587 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityCore;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A1234567890ABCDEF1234588 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1234567890ABCDEF1234589 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votesecurity.VoteSecurityTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1234567890ABCDEF1234563 /* Build configuration list for PBXProject "VoteSecuritySystem" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890ABCDEF1234582 /* Debug */,
+				A1234567890ABCDEF1234583 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1234567890ABCDEF1234582 /* Build configuration list for PBXNativeTarget "VoteSecurityApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890ABCDEF1234584 /* Debug */,
+				A1234567890ABCDEF1234585 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1234567890ABCDEF1234583 /* Build configuration list for PBXNativeTarget "VoteSecurityCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890ABCDEF1234586 /* Debug */,
+				A1234567890ABCDEF1234587 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1234567890ABCDEF1234584 /* Build configuration list for PBXNativeTarget "VoteSecurityTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890ABCDEF1234588 /* Debug */,
+				A1234567890ABCDEF1234589 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A1234567890ABCDEF1234560 /* Project object */;
+}

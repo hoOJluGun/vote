@@ -1,0 +1,60 @@
+{
+  "name": "ukraine-children-voting-system",
+  "version": "2.0.0",
+  "description": "🇺🇦 Повна система голосування за допомогою онкохворим дітям України з асинхронною архітектурою Frontend ↔ Bot Backend",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "npm run start:all",
+    "start:all": "concurrently \"node server.js\" \"node index.js\"",
+    "start:frontend": "node server.js",
+    "start:bot": "node index.js",
+    "dev": "concurrently \"nodemon server.js\" \"nodemon index.js\"",
+    "dev:frontend": "nodemon server.js",
+    "dev:bot": "nodemon index.js",
+    "build": "echo 'System ready for deployment'",
+    "deploy": "./deploy-secure.sh",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch --passWithNoTests"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "node-telegram-bot-api": "^0.66.0",
+    "concurrently": "^8.1.0",
+    "cookie-parser": "^1.4.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^30.2.0",
+    "@jest/globals": "^30.2.0"
+  },
+  "keywords": [
+    "ukraine",
+    "children",
+    "cancer",
+    "charity",
+    "voting",
+    "frontend",
+    "backend",
+    "telegram-bot",
+    "websocket",
+    "asynchronous",
+    "real-time",
+    "volunteer",
+    "help",
+    "donation"
+  ],
+  "author": "Ukraine Children Support Initiative",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hoOJluGun/vote.git"
+  },
+  "homepage": "https://vote-g0q1nnnha-hoojluguns-projects.vercel.app"
+}
