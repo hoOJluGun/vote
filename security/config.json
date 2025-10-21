@@ -1,0 +1,246 @@
+{
+  "security": {
+    "enabled": true,
+    "monitoring": {
+      "enabled": true,
+      "checkInterval": 30000,
+      "maxFailures": 3,
+      "recoveryTimeout": 60000,
+      "backupInterval": 300000
+    },
+    "tokenRotation": {
+      "enabled": true,
+      "rotationInterval": 86400000,
+      "backupTokens": 3,
+      "autoRotate": true
+    },
+    "autoRecovery": {
+      "enabled": true,
+      "maxRecoveryAttempts": 3,
+      "recoveryTimeout": 300000,
+      "providers": [
+        "vercel",
+        "aws",
+        "digitalocean"
+      ]
+    }
+  },
+  "domains": {
+    "primary": {
+      "web": "your-domain.com",
+      "bot": "bot.your-domain.com",
+      "api": "api.your-domain.com"
+    },
+    "backup": {
+      "web": "backup.your-domain.com",
+      "bot": "backup-bot.your-domain.com",
+      "api": "backup-api.your-domain.com"
+    }
+  },
+  "services": {
+    "monitoring": [
+      {
+        "name": "web_frontend",
+        "type": "http",
+        "url": "https://your-domain.com/health",
+        "timeout": 10000
+      },
+      {
+        "name": "telegram_bot",
+        "type": "http",
+        "url": "https://bot.your-domain.com/health",
+        "timeout": 10000
+      },
+      {
+        "name": "api_backend",
+        "type": "http",
+        "url": "https://api.your-domain.com/health",
+        "timeout": 10000
+      },
+      {
+        "name": "database",
+        "type": "custom",
+        "checkFunction": "checkDatabase"
+      },
+      {
+        "name": "file_system",
+        "type": "custom",
+        "checkFunction": "checkFileSystem"
+      }
+    ]
+  },
+  "tokens": {
+    "telegram": {
+      "main_bot": "TELEGRAM_BOT_TOKEN",
+      "alert_bot": "TELEGRAM_ALERT_BOT_TOKEN",
+      "backup_bot": "TELEGRAM_BACKUP_BOT_TOKEN"
+    },
+    "api": {
+      "database_key": "DATABASE_API_KEY",
+      "external_api_key": "EXTERNAL_API_KEY",
+      "payment_gateway_key": "PAYMENT_GATEWAY_KEY",
+      "email_service_key": "EMAIL_SERVICE_KEY"
+    },
+    "jwt": {
+      "access_token_secret": "JWT_ACCESS_SECRET",
+      "refresh_token_secret": "JWT_REFRESH_SECRET",
+      "admin_token_secret": "JWT_ADMIN_SECRET"
+    },
+    "encryption": {
+      "data_encryption_key": "DATA_ENCRYPTION_KEY",
+      "backup_encryption_key": "BACKUP_ENCRYPTION_KEY",
+      "communication_key": "COMMUNICATION_KEY"
+    }
+  },
+  "alerts": {
+    "channels": [
+      {
+        "type": "telegram",
+        "config": {
+          "botToken": "TELEGRAM_ALERT_BOT_TOKEN",
+          "chatId": "TELEGRAM_ALERT_CHAT_ID"
+        },
+        "enabled": true
+      },
+      {
+        "type": "webhook",
+        "config": {
+          "url": "https://your-webhook-url.com/alerts",
+          "headers": {
+            "Authorization": "Bearer YOUR_WEBHOOK_TOKEN"
+          }
+        },
+        "enabled": false
+      },
+      {
+        "type": "email",
+        "config": {
+          "smtp": {
+            "host": "smtp.gmail.com",
+            "port": 587,
+            "secure": false,
+            "auth": {
+              "user": "your-email@gmail.com",
+              "pass": "your-app-password"
+            }
+          },
+          "to": "admin@your-domain.com",
+          "from": "security@your-domain.com"
+        },
+        "enabled": false
+      }
+    ]
+  },
+  "backup": {
+    "enabled": true,
+    "interval": 300000,
+    "retention": 7,
+    "locations": [
+      "./backups",
+      "s3://your-backup-bucket/backups",
+      "gs://your-backup-bucket/backups"
+    ],
+    "encryption": {
+      "enabled": true,
+      "algorithm": "aes-256-gcm",
+      "key": "BACKUP_ENCRYPTION_KEY"
+    }
+  },
+  "recovery": {
+    "strategies": [
+      {
+        "name": "domain_rotation",
+        "enabled": true,
+        "description": "Автоматическая смена доменов при атаке"
+      },
+      {
+        "name": "provider_failover",
+        "enabled": true,
+        "description": "Переключение на резервного провайдера"
+      },
+      {
+        "name": "token_rotation",
+        "enabled": true,
+        "description": "Ротация всех токенов и ключей"
+      },
+      {
+        "name": "data_restoration",
+        "enabled": true,
+        "description": "Восстановление данных из резервных копий"
+      }
+    ]
+  },
+  "providers": {
+    "vercel": {
+      "enabled": true,
+      "apiKey": "VERCEL_API_KEY",
+      "teamId": "VERCEL_TEAM_ID",
+      "projects": {
+        "web": "vote-web",
+        "bot": "vote-bot",
+        "api": "vote-api"
+      }
+    },
+    "aws": {
+      "enabled": true,
+      "accessKeyId": "AWS_ACCESS_KEY_ID",
+      "secretAccessKey": "AWS_SECRET_ACCESS_KEY",
+      "region": "us-east-1",
+      "services": {
+        "ec2": true,
+        "s3": true,
+        "lambda": true,
+        "cloudfront": true
+      }
+    },
+    "digitalocean": {
+      "enabled": true,
+      "apiKey": "DIGITALOCEAN_API_KEY",
+      "region": "nyc1",
+      "services": {
+        "droplets": true,
+        "spaces": true,
+        "load_balancers": true
+      }
+    }
+  },
+  "dns": {
+    "provider": "cloudflare",
+    "apiKey": "CLOUDFLARE_API_KEY",
+    "zoneId": "CLOUDFLARE_ZONE_ID",
+    "records": [
+      {
+        "name": "vote",
+        "type": "CNAME",
+        "content": "your-domain.vercel.app",
+        "ttl": 300
+      },
+      {
+        "name": "bot",
+        "type": "CNAME",
+        "content": "bot.your-domain.vercel.app",
+        "ttl": 300
+      }
+    ]
+  },
+  "monitoring": {
+    "health_checks": {
+      "enabled": true,
+      "endpoints": [
+        "/health",
+        "/api/health",
+        "/bot/health"
+      ]
+    },
+    "metrics": {
+      "enabled": true,
+      "collection_interval": 60000,
+      "retention": 30
+    },
+    "logs": {
+      "enabled": true,
+      "level": "info",
+      "retention": 7
+    }
+  }
+}
