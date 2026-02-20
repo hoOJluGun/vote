@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Settings, X, Paperclip, Sparkles, Zap, Code, FileText, Cpu } from 'lucide-react';
+import { Send, Settings, X, Paperclip, Sparkles, Zap, Code, FileText, Cpu, Loader2 } from 'lucide-react';
 import { ChatMessage } from '../stores/ideStore';
 import { useIDEStore } from '../stores/ideStore';
 
@@ -24,6 +24,7 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
   const [inputValue, setInputValue] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [attachedContext, setAttachedContext] = useState<string[]>([]);
+  const [serverUrl, setServerUrl] = useState('http://localhost:3000');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,13 +49,36 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
     setAttachedContext([]);
   };
 
-  const attachCurrentFile = () => {
-    // In a real implementation, this would attach the currently open file
-    setAttachedContext(['src/App.jsx']);
-  };
+  const quickActions = [
+    {
+      icon: <Code className="w-5 h-5 text-blue-400" />,
+      title: 'Explain Code',
+      desc: 'How does this work?',
+      prompt: 'Explain how this code works step by step.'
+    },
+    {
+      icon: <Zap className="w-5 h-5 text-yellow-400" />,
+      title: 'Refactor',
+      desc: 'Improve performance',
+      prompt: 'Refactor this code to improve performance and readability.'
+    },
+    {
+      icon: <Cpu className="w-5 h-5 text-green-400" />,
+      title: 'Find Issues',
+      desc: 'Detect bugs',
+      prompt: 'Analyze this code and identify potential bugs or issues.'
+    },
+    {
+      icon: <FileText className="w-5 h-5 text-purple-400" />,
+      title: 'Add Docs',
+      desc: 'Generate documentation',
+      prompt: 'Generate documentation comments for this code.'
+    }
+  ];
 
-  const attachProjectStructure = () => {
-    setAttachedContext(['Project Structure']);
+  const attachCurrentFile = () => {
+    // In a real app, this would attach the currently opened file
+    alert('Feature to attach current file would be implemented here');
   };
 
   const TypingIndicator = () => (
@@ -87,31 +111,24 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 bg-header-dark border-b border-border-dark">
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-chat-dark"></div>
-          </div>
-          <div>
-            <h3 className="font-medium text-gray-100">AI Assistant</h3>
-            <p className="text-xs text-gray-500">{chatModel}</p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-panel-border">
+        <div className="flex items-center">
+          <Sparkles className="w-5 h-5 text-purple-400 mr-2" />
+          <h3 className="font-semibold text-gray-200">AI Assistant</h3>
         </div>
-        
-        <div className="flex items-center space-x-2">
+        <div className="flex space-x-2">
           <button 
             onClick={() => setShowSettings(!showSettings)}
-            className="btn-icon text-gray-400 hover:text-gray-200"
+            className="p-1.5 rounded-md text-gray-400 hover:bg-hover-bg hover:text-gray-200 transition-colors"
+            title="Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
           <button 
             onClick={onClose}
-            className="btn-icon text-gray-400 hover:text-red-400"
+            className="p-1.5 rounded-md text-gray-400 hover:bg-hover-bg hover:text-gray-200 transition-colors"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>
@@ -193,24 +210,24 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
             </p>
             
             {/* Quick Actions */}
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              <button className="p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition-colors">
-                <Code className="w-5 h-5 text-blue-400 mb-2" />
-                <div className="text-xs text-gray-300">Explain this code</div>
-              </button>
-              <button className="p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition-colors">
-                <Zap className="w-5 h-5 text-yellow-400 mb-2" />
-                <div className="text-xs text-gray-300">Optimize function</div>
-              </button>
-              <button className="p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition-colors">
-                <FileText className="w-5 h-5 text-green-400 mb-2" />
-                <div className="text-xs text-gray-300">Write documentation</div>
-              </button>
-              <button className="p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-left transition-colors">
-                <Cpu className="w-5 h-5 text-purple-400 mb-2" />
-                <div className="text-xs text-gray-300">Generate tests</div>
-              </button>
-            </div>
+            {!showSettings && chatMessages.length === 0 && (
+              <div className="p-4 border-b border-panel-border bg-sidebar-bg">
+                <h4 className="text-sm font-medium text-gray-300 mb-3">Quick Actions</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setInputValue(action.prompt)}
+                      className="flex flex-col items-center p-3 rounded-lg border border-panel-border hover:bg-hover-bg transition-colors text-left"
+                    >
+                      <div className="mb-2">{action.icon}</div>
+                      <div className="text-xs font-medium text-gray-200">{action.title}</div>
+                      <div className="text-xs text-gray-400 mt-1">{action.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -231,7 +248,7 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
                 {message.role === 'user' ? (
                   <div className="text-sm">{message.content}</div>
                 ) : (
-                  <WaveText text={message.content} />
+                  <div className="text-sm">{message.content}</div>
                 )}
                 
                 {message.context && (
@@ -244,7 +261,19 @@ const ChatPanel = ({ onClose }: ChatPanelProps) => {
               </div>
             ))}
             
-            {isChatLoading && <TypingIndicator />}
+            {isChatLoading && (
+              <div className="p-3 rounded-lg bg-assistant-message-bg mr-4">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center mr-2">
+                    <Sparkles className="w-3 h-3 text-white" />
+                  </div>
+                  <div className="flex items-center text-gray-200">
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <span>Thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </>
         )}

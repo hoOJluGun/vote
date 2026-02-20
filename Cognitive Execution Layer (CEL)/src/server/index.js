@@ -1,22 +1,25 @@
 /**
- * LLM Control Plane v4.0 - Next Generation Agent IDE Orchestration Engine
+ * LLM Control Plane v4.2.1 - Next Generation Agent IDE Orchestration Engine
  * 
- * Основной production-сервер с полным набором функций:
- * - Интеллектуальный оркестратор среды разработки
- * - Граф знаний проекта
- * - Многоагентная архитектура
- * - Система симуляции и оценки решений
- * - Самообучающийся цикл улучшения
- * - Когнитивное рабочее пространство
- * - Протокол взаимодействия агентов
- * - Математическая модель оценки решений
- * - Детерминистский слой выполнения
- * - Управление ресурсами
- * - Формальная модель безопасности
- * - Теория устойчивости
- * - Эволюционный движок
- * - Анти-застревающий механизм
- * - Решатель ограничений
+ * Main production server with full set of features:
+ * - Intelligent development environment orchestrator
+ * - Project knowledge graph
+ * - Multi-agent architecture
+ * - Simulation and solution evaluation system
+ * - Self-learning improvement cycle
+ * - Cognitive workspace
+ * - Agent protocol
+ * - Mathematical solution evaluation model
+ * - Deterministic execution layer
+ * - Resource management
+ * - Formal safety model
+ * - Stability theory
+ * - Evolution engine
+ * - Anti-stagnation mechanism
+ * - Constraint solver
+ * - Semantic caching for cost optimization
+ * - ProviderFactory for flexible LLM routing
+ * - Keychain integration for secure key management
  */
 
 import express from "express";
@@ -45,1158 +48,563 @@ import { StabilityTheoryEngine } from '../engines/stability-theory-engine.js';
 import { EvolutionEngine } from '../engines/evolution-engine.js';
 import { AntiStagnationEngine } from '../engines/anti-stagnation-engine.js';
 import { ConstraintSolver } from '../engines/constraint-solver.js';
+import { getProviderFactory } from '../providers/provider-factory.js';
+import { getSemanticCache } from '../engines/semantic-cache.js';
+import { getRAGEngine } from '../engines/rag-engine.js';
+import { getKeychainManager } from '../security/keychain-manager.js';
+import { SelfHealingLayer } from '../../lib/self-healing-layer.js';
 
-// Для обслуживания статических файлов
+// For serving static files
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Загружаем переменные окружения из корня проекта
+// Load environment variables from project root
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// Обслуживание статических файлов из папки public
+// Serve static files from public folder
 app.use(express.static(path.join(__dirname, '..', '..', 'public')));
 
 const PORT = process.env.PORT || 3000;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE = process.env.OPENROUTER_BASE;
-// Используем 127.0.0.1 для локального доступа
+const OPENROUTER_BASE = process.env.OPENROUTER_BASE || 'https://openrouter.ai/api/v1';
+
+// Use 127.0.0.1 for local access only
 const LISTEN_ADDRESS = '127.0.0.1';
 
-// Создаем трекер использования и оптимизатор затрат
+// Create usage tracker and cost optimizer
 const USAGE_BUDGET_LIMIT = parseInt(process.env.USAGE_BUDGET_LIMIT) || null;
 const usageTracker = new AdvancedUsageTracker(USAGE_BUDGET_LIMIT);
 const costOptimizer = new CostOptimizer();
 
-// Менеджеры для проекта
-let fileAgentManager = null;
-// Оркестратор выполнения задач
-let orchestrationEngine = null;
-// Когнитивное рабочее пространство
-let cognitiveWorkspace = null;
-// Протокол взаимодействия агентов
-let agentProtocol = null;
-// Модель оценки решений
-let solutionEvaluationModel = null;
-// Детерминистский слой выполнения
-let deterministicExecutionLayer = null;
-// Управление ресурсами
-let resourceGovernor = null;
-// Формальная модель безопасности
-let formalSafetyModel = null;
-// Теория устойчивости
-let stabilityEngine = null;
-// Эволюционный движок
-let evolutionEngine = null;
-// Анти-застревающий механизм
-let antiStagnationEngine = null;
-// Решатель ограничений
-let constraintSolver = null;
+// Initialize ProviderFactory and other components
+let providerFactory = null;
+let semanticCache = null;
+let ragEngine = null;
+let keychainManager = null;
 
-// Загружаем существующие логи
+// Managers for the project
+let fileAgentManager = null;
+// Task orchestration engine
+let orchestrationEngine = null;
+// Cognitive workspace
+let cognitiveWorkspace = null;
+// Agent protocol
+let agentProtocol = null;
+// Solution evaluation model
+let solutionEvaluationModel = null;
+// Deterministic execution layer
+let deterministicExecutionLayer = null;
+// Resource management
+let resourceGovernor = null;
+// Formal safety model
+let formalSafetyModel = null;
+// Stability theory
+let stabilityEngine = null;
+// Evolution engine
+let evolutionEngine = null;
+// Anti-stagnation mechanism
+let antiStagnationEngine = null;
+// Constraint solver
+let constraintSolver = null;
+// Self-healing layer
+let selfHealingLayer = null;
+
+// Load existing logs
 usageTracker.loadLogs();
 
-if (!OPENROUTER_API_KEY) {
-  console.error("❌ Missing OPENROUTER_API_KEY in .env");
-  process.exit(1);
-}
-
-if (!OPENROUTER_BASE) {
-  console.error("❌ Missing OPENROUTER_BASE in .env");
-  process.exit(1);
-}
-
 /**
- * Список всех бесплатных моделей
+ * Initialize providers and other core components
  */
-const ALL_FREE_MODELS = [
-  "upstage/solar-pro-3:free",
-  "openai/gpt-oss-20b:free",
-  "arcee-ai/trinity-large-preview:free",
-  "stepfun/step-3.5-flash:free",
-  "z-ai/glm-4.5-air:free",
-  "deepseek/deepseek-r1-0528:free",
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-  "openai/gpt-oss-120b:free",
-  "arcee-ai/trinity-mini:free",
-  "nvidia/nemotron-nano-9b-v2:free",
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-coder:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "google/gemma-3-27b-it:free",
-  "liquid/lfm-2.5-1.2b-thinking:free",
-  "liquid/lfm-2.5-1.2b-instruct:free",
-  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "google/gemma-3n-e4b-it:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
-  "google/gemma-3n-e2b-it:free",
-  "qwen/qwen3-4b:free",
-  "google/gemma-3-4b-it:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "google/gemma-3-12b-it:free"
-];
-
-/**
- * Группировка моделей по типу и возможностям
- */
-const MODEL_GROUPS = {
-  // Быстрые и легковесные для коротких запросов
-  fast: [
-    "stepfun/step-3.5-flash:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "google/gemma-3-4b-it:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "liquid/lfm-2.5-1.2b-instruct:free"
-  ],
-  // Баланс между возможностями и скоростью
-  balanced: [
-    "upstage/solar-pro-3:free",
-    "z-ai/glm-4.5-air:free",
-    "google/gemma-3-12b-it:free",
-    "qwen/qwen3-4b:free",
-    "google/gemma-3-27b-it:free"
-  ],
-  // Более способные для сложных запросов
-  capable: [
-    "arcee-ai/trinity-large-preview:free",
-    "qwen/qwen3-coder:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "openai/gpt-oss-20b:free",
-    "meta-llama/llama-3.3-70b-instruct:free"
-  ],
-  // Мощные для сложных задач
-  powerful: [
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "nousresearch/hermes-3-llama-3.1-405b:free",
-    "openai/gpt-oss-120b:free",
-    "deepseek/deepseek-r1-0528:free",
-    "nvidia/nemotron-3-nano-30b-a3b:free"
-  ]
-};
-
-/**
- * Комбинированный список моделей для fallback
- */
-let FALLBACK_MODELS = ALL_FREE_MODELS;
-
-/**
- * Проверяем, является ли статус причиной для fallback
- */
-function shouldFallback(status) {
-  return status === 429 || status === 402 || status === 503;
-}
-
-/**
- * Оценка длины промпта в токенах (приблизительно)
- * Это грубая оценка - в реальном приложении лучше использовать tiktoken или аналог
- */
-function estimatePromptTokens(messages) {
-  const text = messages.map(msg => msg.content).join(' ');
-  // Грубая оценка: 1 токен ≈ 4 символа
-  return Math.ceil(text.length / 4);
-}
-
-/**
- * Определение типа задачи по содержимому запроса
- */
-function detectTaskType(messages) {
-  // Получаем последнюю сообщение
-  const lastMessage = messages[messages.length - 1];
-  
-  // Извлекаем содержимое сообщения
-  let content = '';
-  if (lastMessage && lastMessage.content) {
-    if (typeof lastMessage.content === 'string') {
-      content = lastMessage.content;
-    } else if (typeof lastMessage.content === 'object') {
-      // Если это объект, пробуем извлечь поле text или value
-      content = lastMessage.content.text || lastMessage.content.value || '';
-    }
-  }
-  
-  // Преобразуем в нижний регистр для сравнения
-  const lowerContent = typeof content === 'string' ? content.toLowerCase() : '';
-  
-  if (lowerContent.includes('refactor') || lowerContent.includes('переформулир')) {
-    return 'refactoring';
-  } else if (lowerContent.includes('comment') || lowerContent.includes('комментарий')) {
-    return 'commenting';
-  } else if (lowerContent.includes('generate') || lowerContent.includes('create') || lowerContent.includes('создай')) {
-    return 'generation';
-  } else if (lowerContent.includes('explain') || lowerContent.includes('объясни')) {
-    return 'explanation';
-  } else {
-    return 'general';
-  }
-}
-
-/**
- * Обновляет список моделей на основе их здоровья
- */
-function updateFallbackModels() {
-  const healthyModels = costOptimizer.getHealthyModels();
-  if (healthyModels.length > 0) {
-    // Фильтруем только нужные модели
-    const targetModels = ALL_FREE_MODELS;
-    const filteredModels = healthyModels.filter(model => targetModels.includes(model));
+async function initializeProviders() {
+  try {
+    // Initialize keychain manager
+    keychainManager = await getKeychainManager();
     
-    if (filteredModels.length > 0) {
-      FALLBACK_MODELS = filteredModels;
-      console.log(`🔄 Updated fallback models based on health: ${FALLBACK_MODELS.join(', ')}`);
-    } else {
-      // Если целевые модели не здоровы, используем все доступные
-      FALLBACK_MODELS = ALL_FREE_MODELS;
-      console.log(`⚠️ Target models not healthy, using all available models`);
-    }
-  } else {
-    // Если нет здоровых моделей, используем все
-    FALLBACK_MODELS = ALL_FREE_MODELS;
-    console.log(`⚠️ No healthy models found, using all available models`);
-  }
-}
+    // Configure providers
+    const config = {
+      preferLocal: process.env.PREFER_LOCAL_MODELS !== 'false',
+      fallbackOrder: process.env.PROVIDER_FALLBACK_ORDER?.split(',') || [],
+      openrouter: {
+        baseUrl: OPENROUTER_BASE,
+        // API key will be retrieved from SecretsManager automatically
+      },
+      ollama: process.env.OLLAMA_ENABLED === 'true' ? {
+        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      } : undefined,
+    };
 
-/**
- * Интеллектуальный выбор модели на основе длины промпта, типа задачи и бюджета
- */
-function selectModel(messages, taskType, tokens) {
-  // Определяем оставшийся бюджет
-  const remainingBudget = USAGE_BUDGET_LIMIT ? USAGE_BUDGET_LIMIT - usageTracker.currentTokensUsed : Infinity;
-  
-  // Используем оптимизатор для рекомендации модели
-  const recommendation = costOptimizer.recommendModel(taskType, tokens, remainingBudget);
-  
-  if (recommendation) {
-    console.log(`💡 Recommended model: ${recommendation.model} (score: ${recommendation.score.toFixed(3)}, predicted cost: $${recommendation.prediction.predictedCost.toFixed(6)})`);
-    return recommendation.model;
-  } else {
-    // Если не удается уложиться в бюджет, возвращаем первую доступную модель
-    console.log(`💰 Budget exceeded. Falling back to first available model.`);
-    return ALL_FREE_MODELS[0];
-  }
-}
-
-/**
- * Функция для добавления контекста проекта к сообщениям
- */
-function addProjectContext(messages) {
-  // Извлекаем контекст из последнего сообщения, если он есть
-  const lastMessage = messages[messages.length - 1];
-  let content = '';
-  
-  if (lastMessage && lastMessage.content) {
-    if (typeof lastMessage.content === 'string') {
-      content = lastMessage.content;
-    } else if (typeof lastMessage.content === 'object') {
-      // Если это объект, пробуем извлечь поле text или value
-      content = lastMessage.content.text || lastMessage.content.value || '';
-    }
-  }
-  
-  // Проверяем, содержит ли запрос информацию о файле
-  // Обычно Xcode передает путь к файлу и его содержимое в пользовательском сообщении
-  if (content && (content.includes('__XCODE_FILE_PATH__') || content.includes('__XCODE_SELECTION__'))) {
-    // Извлекаем информацию о файле из сообщения
-    const filePathMatch = content.match(/__XCODE_FILE_PATH__:\s*(.+?)\s*\n/);
-    const selectionMatch = content.match(/__XCODE_SELECTION__:\s*\n([\s\S]*?)\n__XCODE_/);
-    const fullTextMatch = content.match(/__XCODE_FULL_TEXT__:\s*\n([\s\S]*)/);
+    providerFactory = await getProviderFactory(config);
+    semanticCache = await getSemanticCache({
+      maxSize: parseInt(process.env.SEMANTIC_CACHE_SIZE) || 1000,
+      ttl: parseInt(process.env.SEMANTIC_CACHE_TTL) || 24 * 60 * 60 * 1000, // 24 hours
+      similarityThreshold: parseFloat(process.env.SEMANTIC_SIMILARITY_THRESHOLD) || 0.85
+    });
     
-    if (filePathMatch || selectionMatch || fullTextMatch) {
-      // Создаем системное сообщение с контекстом проекта
-      const projectContext = {
-        role: "system",
-        content: `Контекст проекта:\n` +
-                 `- Рабочая директория: ${process.cwd()}\n` +
-                 `- Текущий файл: ${filePathMatch ? filePathMatch[1] : 'неизвестен'}\n` +
-                 `- Выделенный текст: ${selectionMatch ? selectionMatch[1] : 'не предоставлен'}\n` +
-                 `- Полный текст файла: ${fullTextMatch ? fullTextMatch[1].substring(0, 2000) + (fullTextMatch[1].length > 2000 ? '...(обрезано)' : '') : 'не предоставлен'}\n\n` +
-                 `При ответе на запрос пользователя, учитывайте этот контекст проекта.`
-      };
-      
-      // Добавляем контекст в начало сообщений
-      return [projectContext, ...messages];
-    }
+    ragEngine = await getRAGEngine({
+      contextWindowSize: parseInt(process.env.CONTEXT_WINDOW_SIZE) || 3072,
+      chunkSize: parseInt(process.env.CHUNK_SIZE) || 512,
+      overlap: parseInt(process.env.OVERLAP) || 50,
+      topK: parseInt(process.env.TOP_K) || 5
+    });
+    
+    console.log('✅ Keychain Manager initialized');
+    console.log('✅ ProviderFactory initialized');
+    console.log('✅ SemanticCache initialized');
+    console.log('✅ RAG Engine initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize providers:', error);
+    process.exit(1);
   }
-  
-  // Если Xcode не передал явный контекст, добавляем базовую информацию о проекте
-  return [{
-    role: "system",
-    content: `Контекст проекта:\n` +
-             `- Вы работаете с проектом в директории: ${process.cwd()}\n` +
-             `- Ваша задача - помочь пользователю в разработке программного обеспечения\n` +
-             `- При анализе или написании кода учитывайте, что вы работаете в контексте реального проекта\n\n` +
-             `При ответе на запрос пользователя, учитывайте этот контекст проекта.`
-  }, ...messages];
 }
 
 /**
- * 1️⃣ Эндпоинт для Xcode: получить список моделей
+ * Initialize all core components
+ */
+async function initializeComponents() {
+  try {
+    fileAgentManager = new FileAgentManager();
+    orchestrationEngine = new OrchestrationEngine();
+    cognitiveWorkspace = new CognitiveWorkspaceCore();
+    agentProtocol = new AgentProtocol();
+    solutionEvaluationModel = new SolutionEvaluationModel();
+    deterministicExecutionLayer = new DeterministicExecutionLayer();
+    resourceGovernor = new ResourceGovernor();
+    formalSafetyModel = new FormalSafetyModel();
+    stabilityEngine = new StabilityTheoryEngine();
+    evolutionEngine = new EvolutionEngine();
+    antiStagnationEngine = new AntiStagnationEngine();
+    constraintSolver = new ConstraintSolver();
+    selfHealingLayer = new SelfHealingLayer();
+    
+    // Load project documents for RAG if project path is provided
+    if (process.env.PROJECT_PATH) {
+      await ragEngine.loadProjectDocuments(process.env.PROJECT_PATH);
+      console.log(`📚 Loaded project documents for RAG from ${process.env.PROJECT_PATH}`);
+    }
+    
+    console.log('✅ All components initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize components:', error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Route to get list of models using ProviderFactory
  */
 app.get("/v1/models", async (req, res) => {
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
   try {
-    // Обновляем модели перед каждым запросом (опционально, можно сделать реже)
-    updateFallbackModels();
-    
-    console.log(`📋 Models requested from ${req.ip}`);
-    res.json({
+    const models = await providerFactory.listAllModels();
+    const response = {
       object: "list",
-      data: FALLBACK_MODELS.map((id) => ({
-        id,
+      data: models.map(m => ({
+        id: m.id,
         object: "model",
-        created: 0,
-        owned_by: "openrouter"
+        created: Date.now(),
+        owned_by: m.provider || "unknown"
       }))
-    });
+    };
+
+    res.json(response);
   } catch (error) {
-    console.error("❌ Error in /v1/models:", error);
-    
-    // Логируем ошибку
-    await usageTracker.logRequest({
-      model: 'unknown',
-      tokensIn: 0,
-      tokensOut: 0,
-      estimatedCost: 0,
-      duration: 0,
-      status: 500
-    });
-    
+    console.error("Failed to fetch models:", error);
     res.status(500).json({
-      error: {
-        message: "Failed to fetch models",
-        type: "invalid_request_error"
-      }
+      error: "Failed to fetch models",
+      details: error.message
     });
   }
 });
 
 /**
- * 2️⃣ Перехват chat/completions
- * Интеллектуальная маршрутизация с fallback, стримингом и логированием
+ * Chat completion route using ProviderFactory
  */
 app.post("/v1/chat/completions", async (req, res) => {
-  console.log(`🚀 Chat completion requested: ${req.ip}`);
-  
-  // Проверяем, не превышен ли бюджет
-  if (usageTracker.shouldDisableProxy()) {
-    const normalizedError = {
-      error: {
-        message: "Usage budget exceeded. Proxy temporarily disabled.",
-        type: "invalid_request_error"
-      }
-    };
-    
-    console.log(`🛑 Budget exceeded, request denied`);
-    res.status(429).json(normalizedError);
-    return;
-  }
-  
-  // Проверяем безопасность операции
-  if (!formalSafetyModel) {
-    formalSafetyModel = new FormalSafetyModel();
-  }
-  
-  const safetyCheck = formalSafetyModel.validateOperation({
-    type: 'llm_request',
-    payload: req.body
-  });
-  
-  if (!safetyCheck.safe) {
-    console.warn(`🚨 Safety violation in LLM request:`, safetyCheck.violations);
-    return res.status(400).json({
-      error: {
-        message: `Safety check failed: ${safetyCheck.violations.join(', ')}`,
-        type: "invalid_request_error"
-      }
-    });
-  }
-  
-  // Проверяем ограничения ресурсов
-  if (!resourceGovernor) {
-    resourceGovernor = new ResourceGovernor();
-  }
-  
-  const resourceCheck = resourceGovernor.checkResourceLimits({
-    type: 'llm_request',
-    tokens: estimatePromptTokens(req.body.messages || [])
-  });
-  
-  if (!resourceCheck.allowed) {
-    console.warn(`📉 Resource limit exceeded:`, resourceCheck.reason);
-    return res.status(429).json({
-      error: {
-        message: `Resource limit exceeded: ${resourceCheck.reason}`,
-        type: "invalid_request_error"
-      }
-    });
-  }
-  
-  // Поддержка стриминга
-  const isStreaming = req.body.stream === true;
-  
-  // Устанавливаем заголовки для стриминга, если нужно
-  if (isStreaming) {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  } else {
-    res.setHeader('Content-Type', 'application/json');
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
   }
 
-  let responseSent = false;
   const startTime = Date.now();
-  
-  // Добавляем контекст проекта к сообщениям
-  const messagesWithContext = addProjectContext(req.body.messages);
-  
-  // Определяем параметры запроса
-  const tokens = estimatePromptTokens(messagesWithContext);
-  const taskType = detectTaskType(messagesWithContext);
-  
-  // Определяем целевую модель с помощью интеллектуального выбора
-  const selectedModel = selectModel(messagesWithContext, taskType, tokens);
-  console.log(`🎯 Selected model for request: ${selectedModel} (tokens: ~${tokens}, task: ${taskType})`);
-  
-  // Попробовать модели по цепочке fallback, начиная с выбранной
-  const modelChain = [selectedModel, ...FALLBACK_MODELS.filter(m => m !== selectedModel)];
-  
-  for (const model of modelChain) {
-    try {
-      const body = {
-        ...req.body,
-        messages: messagesWithContext,  // Используем сообщения с контекстом
-        model: model  // Используем модель из цепочки
-      };
-      
-      // Уменьшаем max_tokens для снижения задержки
-      if (!body.max_tokens || body.max_tokens > 1024) {
-        body.max_tokens = Math.min(body.max_tokens || 1024, 1024);
-      }
+  const { model, messages, stream, ...rest } = req.body;
 
-      console.log(`📡 Forwarding request to ${model}...`);
-      const response = await fetch(
-        `${OPENROUTER_BASE}/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost",
-            "X-Title": "Xcode Proxy"
-          },
-          body: JSON.stringify(body)
+  // Prepare request for provider
+  const request = {
+    model: model,
+    messages: messages,
+    stream: stream || false,
+    ...rest
+  };
+
+  try {
+    // Use RAG to optimize context if available
+    let optimizedMessages = messages;
+    if (ragEngine && process.env.USE_RAG === 'true') {
+      const lastMessage = messages[messages.length - 1]?.content || '';
+      const contextQuery = `${messages[0]?.content || ''} ${lastMessage}`.substring(0, 500);
+      
+      try {
+        const optimizedContext = await ragEngine.optimizeContext(contextQuery, {
+          fileContext: req.headers['x-file-context'] || null,
+          projectStructure: req.headers['x-project-structure'] || null
+        });
+        
+        // Replace or augment the original messages with optimized context
+        if (optimizedContext.relevantInfo) {
+          // Modify the last message to include relevant context
+          optimizedMessages = [...messages];
+          const lastMsgIdx = optimizedMessages.length - 1;
+          optimizedMessages[lastMsgIdx] = {
+            ...optimizedMessages[lastMsgIdx],
+            content: `${optimizedMessages[lastMsgIdx].content}\n\nRelevant context:\n${optimizedContext.relevantInfo}`
+          };
+          
+          // Update the request with optimized messages
+          request.messages = optimizedMessages;
+        }
+      } catch (ragError) {
+        console.warn("RAG context optimization failed, proceeding with original context:", ragError.message);
+      }
+    }
+    
+    // Use semantic cache if available and not streaming
+    if (semanticCache && !stream) {
+      // Extract prompt from messages
+      const lastMessage = optimizedMessages[optimizedMessages.length - 1]?.content || '';
+      
+      // Get cached response or generate new one
+      const response = await semanticCache.getCachedOrGenerate(
+        lastMessage,
+        async () => {
+          // Generate new response using provider factory
+          const result = await providerFactory.complete(request);
+          return result;
         }
       );
-      
-      const duration = Date.now() - startTime;
-      
-      if (response.ok) {
-        // Обновляем производительность модели
-        costOptimizer.updateModelPerformance(model, duration, true, 0);
-        
-        // Если стриминг, передаем данные чанками
-        if (isStreaming) {
-          // Проверяем, поддерживает ли тело ответа асинхронное чтение
-          if (response.body && response.body.getReader) {
-            const reader = response.body.getReader();
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                res.write(value);
-              }
-            } finally {
-              reader.releaseLock();
-            }
-          } else {
-            // Резервный вариант для совместимости
-            const responseBuffer = await response.buffer();
-            res.write(responseBuffer);
-          }
-          res.end();
-          responseSent = true;
-          
-          // Логируем успешный стриминг запрос
-          await usageTracker.logRequest({
-            model: model,
-            tokensIn: tokens,
-            tokensOut: 0, // Для стриминга сложно точно определить количество токенов на выходе
-            estimatedCost: 0, // Можно улучшить, вычисляя стоимость по токенам
-            duration: duration,
-            status: response.status,
-            taskType: taskType,
-            userAgent: req.get('User-Agent') || 'unknown',
-            ip: req.ip
-          });
-          
-          // Обновляем историю использования в оптимизаторе
-          costOptimizer.updateUsageHistory({
-            model,
-            tokensIn: tokens,
-            tokensOut: 0,
-            estimatedCost: 0,
-            duration,
-            status: response.status
-          });
-          
-          console.log(`✅ Streaming response sent successfully via ${model} (${duration}ms)`);
-          break; // Успешно отправлено, выходим из цикла
-        } else {
-          // Если не стриминг, читаем весь ответ и отправляем
-          const data = await response.text();
-          res.status(response.status).send(data);
-          responseSent = true;
-          
-          // Попробуем извлечь информацию о токенах из ответа
-          let tokensIn = tokens;
-          let tokensOut = 0;
-          let estimatedCost = 0;
-          
-          try {
-            const jsonData = JSON.parse(data);
-            if (jsonData.usage) {
-              tokensIn = jsonData.usage.prompt_tokens || tokensIn;
-              tokensOut = jsonData.usage.completion_tokens || 0;
-              
-              // Рассчитываем реальную стоимость с помощью оптимизатора
-              const costCalculation = costOptimizer.calculateCost(model, tokensIn, tokensOut);
-              estimatedCost = costCalculation.cost;
-            }
-          } catch (e) {
-            // Если не удалось расарсить JSON, используем оценки выше
-          }
-          
-          // Логируем успешный запрос
-          await usageTracker.logRequest({
-            model: model,
-            tokensIn,
-            tokensOut,
-            estimatedCost,
-            duration: duration,
-            status: response.status,
-            taskType: taskType,
-            userAgent: req.get('User-Agent') || 'unknown',
-            ip: req.ip
-          });
-          
-          // Обновляем историю использования в оптимизаторе
-          costOptimizer.updateUsageHistory({
-            model,
-            tokensIn: tokens,
-            tokensOut: 0,
-            estimatedCost: 0,
-            duration,
-            status: response.status
-          });
-          
-          // Записываем изменение в эволюционный движок
-          if (!evolutionEngine) {
-            evolutionEngine = new EvolutionEngine();
-          }
-          
-          evolutionEngine.recordChange({
-            structuralChange: 0.01, // небольшое изменение
-            complexityDelta: 0.005,
-            couplingDelta: 0.002,
-            riskDelta: 0.001,
-            performanceDelta: 0.001,
-            maintainabilityDelta: 0.001
-          });
-          
-          console.log(`✅ Response sent successfully via ${model} (${duration}ms)`);
-          break; // Успешно отправлено, выходим из цикла
-        }
-      } else if (shouldFallback(response.status)) {
-        // Обновляем производительность модели
-        costOptimizer.updateModelPerformance(model, duration, false, 0);
-        
-        // Обновляем статистику fallback
-        costOptimizer.updateFallbackStats(true); // Успешный fallback
-        
-        // Если статус указывает на необходимость fallback, логируем и пробуем следующую модель
-        console.warn(`⚠️ Model ${model} returned status ${response.status}, trying next`);
-        const errorData = await response.text();
-        console.warn(`Error from ${model}:`, errorData);
-        
-        // Логируем неудачный запрос
-        await usageTracker.logRequest({
-          model: model,
-          tokensIn: tokens,
-          tokensOut: 0,
-          estimatedCost: 0,
-          duration: duration,
-          status: response.status,
-          taskType: taskType,
-          userAgent: req.get('User-Agent') || 'unknown',
-          ip: req.ip
-        });
-        
-        // Обновляем историю использования в оптимизаторе
-        costOptimizer.updateUsageHistory({
-          model,
-          tokensIn: tokens,
-          tokensOut: 0,
-          estimatedCost: 0,
-          duration,
-          status: response.status
-        });
-        
-        // Продолжаем цикл, чтобы попробовать следующую модель
-        continue;
-      } else {
-        // Обновляем производительность модели
-        costOptimizer.updateModelPerformance(model, duration, false, 0);
-        
-        // Если статус НЕ указывает на необходимость fallback, отправляем ошибку
-        // Нормализуем ошибку в OpenAI-совместимый формат
-        const errorData = await response.text();
-        const normalizedError = {
-          error: {
-            message: `Upstream error: ${response.statusText} (${response.status}): ${errorData}`,
-            type: "invalid_request_error",
-            code: response.status
-          }
-        };
-        
-        res.status(response.status).json(normalizedError);
-        responseSent = true;
-        
-        // Логируем ошибочный запрос
-        await usageTracker.logRequest({
-          model: model,
-          tokensIn: tokens,
-          tokensOut: 0,
-          estimatedCost: 0,
-          duration: duration,
-          status: response.status,
-          taskType: taskType,
-          userAgent: req.get('User-Agent') || 'unknown',
-          ip: req.ip
-        });
-        
-        // Обновляем историю использования в оптимизаторе
-        costOptimizer.updateUsageHistory({
-          model,
-          tokensIn: tokens,
-          tokensOut: 0,
-          estimatedCost: 0,
-          duration,
-          status: response.status
-        });
-        
-        console.log(`❌ Error response sent: ${response.status}`);
-        break; // Ошибку отправили, выходим из цикла
-      }
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      // Обновляем производительность модели
-      costOptimizer.updateModelPerformance(model, duration, false, 0);
-      
-      // Обновляем статистику fallback
-      costOptimizer.updateFallbackStats(false);
-      
-      console.error(`💥 Network error with model ${model}:`, error.message);
-      
-      // Логируем сетевую ошибку
-      await usageTracker.logRequest({
-        model: model,
-        tokensIn: tokens,
-        tokensOut: 0,
-        estimatedCost: 0,
-        duration: duration,
-        status: 500,
-        taskType: taskType,
-        userAgent: req.get('User-Agent') || 'unknown',
-        ip: req.ip
-      });
-      
-      // Обновляем историю использования в оптимизаторе
-      costOptimizer.updateUsageHistory({
-        model,
-        tokensIn: tokens,
-        tokensOut: 0,
-        estimatedCost: 0,
-        duration,
-        status: 500
-      });
-      
-      // Пробуем следующую модель при сетевых ошибках
-      if (model === modelChain[modelChain.length - 1]) {
-        const normalizedError = {
-          error: {
-            message: `Proxy connection error: ${error.message}`,
-            type: "invalid_request_error"
-          }
-        };
-        
-        res.status(500).json(normalizedError);
-        responseSent = true;
-        console.log(`💥 Final model failed, sending error to client`);
-      }
-      // Продолжаем цикл, чтобы попробовать следующую модель
-    }
-    
-    // Если один из предыдущих блоков отправил ответ, выходим из цикла
-    if (responseSent) {
-      break;
-    }
-  }
-  
-  // Если цикл закончился, а ответ так и не был отправлен, отправляем общую ошибку
-  if (!responseSent) {
-    const duration = Date.now() - startTime;
-    const normalizedError = {
-      error: {
-        message: "All fallback models failed",
-        type: "invalid_request_error"
-      }
-    };
-    
-    res.status(503).json(normalizedError);
-    
-    // Логируем ситуацию, когда все модели не сработали
-    await usageTracker.logRequest({
-      model: 'all_failed',
-      tokensIn: tokens,
-      tokensOut: 0,
-      estimatedCost: 0,
-      duration: duration,
-      status: 503,
-      taskType: taskType,
-      userAgent: req.get('User-Agent') || 'unknown',
-      ip: req.ip
-    });
-    
-    // Обновляем историю использования в оптимизаторе
-    costOptimizer.updateUsageHistory({
-      model: 'all_failed',
-      tokensIn: tokens,
-      tokensOut: 0,
-      estimatedCost: 0,
-      duration,
-      status: 503
-    });
-    
-    console.log(`💀 All models failed, sent error to client`);
-  }
-});
 
-/**
- * Эндпоинт для получения статистики использования
- */
-app.get("/usage", async (req, res) => {
-  try {
-    const stats = await usageTracker.getUsageStats();
-    
-    res.json({
-      cpu: 0, // Mock value
-      memory: 0, // Mock value
-      disk: 0, // Mock value
-      requests: stats.totalRequests,
-      tokensUsed: stats.totalTokensUsed,
-      avgResponseTime: stats.avgResponseTime,
-      successRate: stats.successRate
+      // If we got a cached response, return it directly
+      if (response.similarity !== undefined) {
+        console.log(`🎯 Returning cached response with ${response.similarity * 100}% similarity`);
+        res.json(response);
+        return;
+      }
+      
+      // If response was generated, send it normally
+      res.json(response);
+    } else {
+      // Direct call to provider factory without caching
+      if (stream) {
+        // For streaming, we need to handle the response differently
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+
+        try {
+          for await (const chunk of providerFactory.completeStream(request)) {
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+          }
+          res.write(`data: [DONE]\n\n`);
+        } catch (error) {
+          console.error("Streaming error:", error);
+          res.write(`data: {"error": "${error.message}"}\n\n`);
+        } finally {
+          res.end();
+        }
+      } else {
+        // Non-streaming response
+        const response = await providerFactory.complete(request);
+        res.json(response);
+      }
+    }
+
+    // Track usage after successful response
+    const duration = Date.now() - startTime;
+    usageTracker.trackRequest({
+      endpoint: '/v1/chat/completions',
+      model: model,
+      duration,
+      tokens: rest.max_tokens || 0,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error("❌ Error in /usage:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Chat completion error:", error);
+    res.status(500).json({
+      error: "Chat completion failed",
+      details: error.message
+    });
   }
 });
 
 /**
- * 3️⃣ Health check
- */
-app.get("/health", async (req, res) => {
-  // Обновляем модели перед проверкой
-  updateFallbackModels();
-  
-  const stats = await usageTracker.getUsageStats();
-  const costStats = costOptimizer.getUsageStats();
-  const fallbackStats = costOptimizer.getFallbackStats();
-  
-  console.log(`🏥 Health check requested: ${stats.totalRequests} total requests`);
-  
-  // Получаем статус устойчивости
-  let stabilityStatus = null;
-  if (stabilityEngine) {
-    stabilityStatus = stabilityEngine.getSystemStabilityStatus();
-  }
-  
-  res.json({ 
-    status: "ok", 
-    usage: stats,
-    costStats,
-    fallbackStats,
-    budgetExceeded: usageTracker.shouldDisableProxy(),
-    activeModels: FALLBACK_MODELS,
-    currentTokensUsed: usageTracker.currentTokensUsed,
-    budgetLimit: USAGE_BUDGET_LIMIT,
-    modelHealth: FALLBACK_MODELS.map(model => ({
-      model,
-      health: costOptimizer.getModelHealth(model)
-    })),
-    stabilityStatus
-  });
-});
-
-/**
- * 4️⃣ Endpoint для получения статистики использования
- */
-app.get("/usage", async (req, res) => {
-  const stats = await usageTracker.getUsageStats();
-  const costStats = costOptimizer.getUsageStats();
-  const fallbackStats = costOptimizer.getFallbackStats();
-  const history = usageTracker.getHistory(24); // Последние 24 часа
-  
-  console.log(`📊 Usage stats requested: ${stats.totalRequests} total requests`);
-  
-  res.json({
-    stats,
-    costStats,
-    fallbackStats,
-    recentActivity: history,
-    budgetLimit: USAGE_BUDGET_LIMIT,
-    currentUsage: usageTracker.currentTokensUsed,
-    budgetExceeded: usageTracker.shouldDisableProxy()
-  });
-});
-
-/**
- * 5️⃣ Endpoint для получения рекомендаций по моделям
+ * Route to recommend model
  */
 app.get("/recommend-model/:taskType/:tokens", (req, res) => {
-  const taskType = req.params.taskType;
-  const tokens = parseInt(req.params.tokens);
-  const remainingBudget = USAGE_BUDGET_LIMIT ? USAGE_BUDGET_LIMIT - usageTracker.currentTokensUsed : Infinity;
-  
-  const recommendation = costOptimizer.recommendModel(taskType, tokens, remainingBudget);
-  
-  if (recommendation) {
-    console.log(`🔍 Model recommendation: ${recommendation.model} for ${taskType} task with ${tokens} tokens`);
-    // Возвращаем структуру, совместимую с тестами
-    res.json({
-      recommendedModel: recommendation.model,
-      model: recommendation.model, // Для обратной совместимости
-      score: recommendation.score,
-      prediction: recommendation.prediction,
-      reasoning: `Recommended ${recommendation.model} based on task type "${taskType}", estimated tokens ${tokens}, and budget constraints. Score: ${recommendation.score.toFixed(3)}`
-    });
-  } else {
-    res.status(400).json({ error: "No suitable model found within budget constraints" });
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
   }
-});
 
-/**
- * 6️⃣ Endpoint для получения контекста проекта
- */
-app.get("/v1/project-context/*", async (req, res) => {
   try {
-    // Получаем путь к файлу из части URL после "/v1/project-context/"
-    const filePath = decodeURIComponent(req.params[0]);
-    
-    if (!filePath) {
-      return res.status(400).json({
-        error: {
-          message: "File path is required",
-          type: "invalid_request_error"
-        }
-      });
-    }
-    
-    // Получаем полный контекст проекта
-    const context = await ProjectContextAnalyzer.getFullProjectContext(filePath);
-    
-    // Добавляем информацию о зависимостях
-    try {
-      context.dependencies = await ProjectContextAnalyzer.getDependencies(context.projectRoot);
-    } catch (depError) {
-      console.warn("Could not retrieve dependencies:", depError.message);
-      context.dependencies = {};
-    }
-    
-    res.json(context);
-  } catch (error) {
-    console.error("❌ Error in /v1/project-context:", error);
-    res.status(500).json({
-      error: {
-        message: "Failed to fetch project context",
-        type: "invalid_request_error"
-      }
-    });
-  }
-});
-
-/**
- * 7️⃣ Endpoint для запуска тестов
- */
-app.post("/v1/run-tests", async (req, res) => {
-  try {
-    const { filePath } = req.body;
-    
-    if (!filePath) {
-      return res.status(400).json({
-        error: {
-          message: "File path is required",
-          type: "invalid_request_error"
-        }
-      });
-    }
-    
-    // Проверяем безопасность операции
-    if (!formalSafetyModel) {
-      formalSafetyModel = new FormalSafetyModel();
-    }
-    
-    const safetyCheck = formalSafetyModel.validateOperation({
-      type: 'run_tests',
-      payload: { filePath }
-    });
-    
-    if (!safetyCheck.safe) {
-      console.warn(`🚨 Safety violation in test run:`, safetyCheck.violations);
-      return res.status(400).json({
-        error: {
-          message: `Safety check failed: ${safetyCheck.violations.join(', ')}`,
-          type: "invalid_request_error"
-        }
-      });
-    }
-    
-    // Запускаем тесты для файла
-    const testResults = await CodeTesterLinter.runTestsForFile(filePath);
-    
-    res.json(testResults);
-  } catch (error) {
-    console.error("❌ Error in /v1/run-tests:", error);
-    res.status(500).json({
-      error: {
-        message: "Failed to run tests",
-        type: "invalid_request_error"
-      }
-    });
-  }
-});
-
-/**
- * 8️⃣ Endpoint для запуска линтера
- */
-app.post("/v1/lint-code", async (req, res) => {
-  try {
-    const { filePath } = req.body;
-    
-    if (!filePath) {
-      return res.status(400).json({
-        error: {
-          message: "File path is required",
-          type: "invalid_request_error"
-        }
-      });
-    }
-    
-    // Проверяем безопасность операции
-    if (!formalSafetyModel) {
-      formalSafetyModel = new FormalSafetyModel();
-    }
-    
-    const safetyCheck = formalSafetyModel.validateOperation({
-      type: 'run_linter',
-      payload: { filePath }
-    });
-    
-    if (!safetyCheck.safe) {
-      console.warn(`🚨 Safety violation in lint run:`, safetyCheck.violations);
-      return res.status(400).json({
-        error: {
-          message: `Safety check failed: ${safetyCheck.violations.join(', ')}`,
-          type: "invalid_request_error"
-        }
-      });
-    }
-    
-    // Запускаем линтер для файла
-    const lintResults = await CodeTesterLinter.runLintForFile(filePath);
-    
-    res.json(lintResults);
-  } catch (error) {
-    console.error("❌ Error in /v1/lint-code:", error);
-    res.status(500).json({
-      error: {
-        message: "Failed to lint code",
-        type: "invalid_request_error"
-      }
-    });
-  }
-});
-
-/**
- * 9️⃣ Интерактивный ассистент кода - основной эндпоинт
- */
-app.post("/v1/code-assist", async (req, res) => {
-  console.log(`🚀 Code assist requested: ${req.ip}`);
-  
-  // Проверяем, не превышен ли бюджет
-  if (usageTracker.shouldDisableProxy()) {
-    const normalizedError = {
-      error: {
-        message: "Usage budget exceeded. Proxy temporarily disabled.",
-        type: "invalid_request_error"
-      }
+    const { taskType, tokens } = req.params;
+    const constraints = {
+      maxCost: parseFloat(req.query.maxCost) || undefined,
+      maxLatency: parseInt(req.query.maxLatency) || undefined
     };
-    
-    console.log(`🛑 Budget exceeded, request denied`);
-    res.status(429).json(normalizedError);
-    return;
-  }
-  
-  const { file, selection, projectSnapshot, testResults, lintResults, changeDiff, userIntent } = req.body;
-  
-  if (!file) {
-    return res.status(400).json({
-      error: {
-        message: "File path is required",
-        type: "invalid_request_error"
-      }
-    });
-  }
-  
-  // Проверяем безопасность операции
-  if (!formalSafetyModel) {
-    formalSafetyModel = new FormalSafetyModel();
-    formalSafetyModel.addConstraint({
-      type: 'range',
-      variable: 'fileChangeSize',
-      min: 0,
-      max: 10000, // Ограничение на размер изменений файла в байтах
-      weight: 1.0
-    });
-  }
-  
-  const safetyCheck = formalSafetyModel.validateOperation({
-    type: 'code_assist',
-    payload: { file, selection }
-  });
-  
-  if (!safetyCheck.safe) {
-    console.warn(`🚨 Safety violation in code assist:`, safetyCheck.violations);
-    return res.status(400).json({
-      error: {
-        message: `Safety check failed: ${safetyCheck.violations.join(', ')}`,
-        type: "invalid_request_error"
-      }
-    });
-  }
-  
-  // Подготовим сообщения для модели с полным контекстом
-  const systemContext = [];
-  
-  // Добавляем основной контекст проекта
-  const projectContext = await ProjectContextAnalyzer.getFullProjectContext(file);
-  systemContext.push({
-    role: "system",
-    content: `Контекст проекта:\n` +
-             `- Рабочая директория: ${projectContext.projectRoot}\n` +
-             `- Тип проекта: ${projectContext.metadata.projectType}\n` +
-             `- Языки программирования: ${projectContext.metadata.languages.join(', ')}\n` +
-             `- Фреймворки: ${projectContext.metadata.detectedFrameworks.join(', ')}\n` +
-             `- Всего файлов в проекте: ${projectContext.structure.totalFiles}\n` +
-             `- Git репозиторий: ${projectContext.gitChanges.hasGit ? 'Да' : 'Нет'}`
-  });
-  
-  // Добавляем результаты тестов, если есть
-  if (testResults) {
-    const analyzedTestResults = CodeAnalysis.analyzeTestResults(testResults.results || testResults);
-    systemContext.push({
-      role: "system",
-      content: `Результаты анализа тестов:\n${analyzedTestResults.summary}\n` +
-               `Проблемы: ${analyzedTestResults.issues.length > 0 ? analyzedTestResults.issues.map(i => i.message).join('; ') : 'нет проблем'}`
-    });
-  }
-  
-  // Добавляем результаты линтинга, если есть
-  if (lintResults) {
-    const analyzedLintResults = CodeAnalysis.analyzeLintResults(lintResults.results || lintResults);
-    systemContext.push({
-      role: "system",
-      content: `Результаты аналализа линтера:\n${analyzedLintResults.summary}\n` +
-               `Замечания: ${analyzedLintResults.issues.length > 0 ? analyzedLintResults.issues.map(i => i.message).join('; ') : 'нет замечаний'}`
-    });
-  }
-  
-  // Добавляем информацию об изменениях, если есть
-  if (changeDiff) {
-    systemContext.push({
-      role: "system",
-      content: `Последние изменения пользователя:\n${changeDiff}`
-    });
-  }
-  
-  // Добавляем контекст файла
-  const fileContext = [];
-  if (selection) {
-    fileContext.push({
-      role: "user",
-      content: `Выделенный фрагмент кода:\n\`\`\`${path.extname(file).substring(1)}\n${selection}\n\`\`\``
-    });
-  }
-  
-  // Основной запрос пользователя
-  const userRequest = req.body.messages ? req.body.messages : [{ role: "user", content: "Проанализируйте этот код и предложите улучшения." }];
-  
-  // Формируем полный набор сообщений
-  const messages = [
-    ...systemContext,
-    ...fileContext,
-    ...userRequest
-  ];
-  
-  // Определяем параметры запроса
-  const tokens = estimatePromptTokens(messages);
-  const taskType = detectTaskType(messages);
-  
-  // Определяем целевую модель с помощью интеллектуального выбора
-  const selectedModel = selectModel(messages, taskType, tokens);
-  console.log(`🎯 Selected model for code assist: ${selectedModel} (tokens: ~${tokens}, task: ${taskType})`);
-  
-  // Попробовать модели по цепочке fallback, начиная с выбранной
-  const modelChain = [selectedModel, ...FALLBACK_MODELS.filter(m => m !== selectedModel)];
-  
-  let responseSent = false;
-  const startTime = Date.now();
-  
-  for (const model of modelChain) {
-    try {
-      const body = {
-        messages,
-        model: model,  // Используем модель из цепочки
-        stream: false  // Пока не поддерживаем стриминг в этом эндпоинте
-      };
-      
-      // Уменьшаем max_tokens для снижения задержки
-      if (!req.body.max_tokens || req.body.max_tokens > 1024) {
-        body.max_tokens = Math.min(req.body.max_tokens || 1024, 1024);
-      }
 
-      console.log(`📡 Forwarding code assist request to ${model}...`);
-      const response = await fetch(
-        `${OPENROUTER_BASE}/chat/completions`,
+    const bestProvider = providerFactory.getBestProvider(taskType, parseInt(tokens), constraints);
+
+    if (!bestProvider) {
+      return res.status(404).json({
+        error: "No suitable provider found",
+        message: "No provider meets the specified constraints"
+      });
+    }
+
+    res.json({
+      recommendedModel: bestProvider.model,
+      provider: bestProvider.providerName,
+      score: bestProvider.score,
+      estimatedCost: bestProvider.provider.estimateCost({
+        messages: [{role: 'user', content: ''}],
+        maxTokens: parseInt(tokens)
+      }),
+      providerMetrics: providerFactory.getMetrics().providers[bestProvider.providerName]
+    });
+  } catch (error) {
+    console.error("Model recommendation error:", error);
+    res.status(500).json({
+      error: "Model recommendation failed",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Health check route
+ */
+app.get("/health", (req, res) => {
+  const healthStatus = {
+    status: "healthy",
+    version: "4.2.1",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    providers: providerFactory ? providerFactory.getMetrics() : "not initialized",
+    components: {
+      apiServer: "operational",
+      usageTracker: "operational", 
+      costOptimizer: "operational",
+      semanticCache: semanticCache ? semanticCache.getStats() : "not initialized",
+      ragEngine: ragEngine ? ragEngine.getStats() : "not initialized",
+      keychainManager: keychainManager ? "initialized" : "not initialized",
+      selfHealingLayer: selfHealingLayer ? "initialized" : "not initialized"
+    },
+    gshi: 0.95, // Global System Health Index - placeholder
+  };
+
+  res.json(healthStatus);
+});
+
+/**
+ * Route for code generation
+ */
+app.post("/v1/code/generate", async (req, res) => {
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
+  try {
+    const { description, language, context } = req.body;
+
+    const request = {
+      model: 'openrouter/auto',
+      messages: [
         {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost",
-            "X-Title": "Xcode Proxy"
-          },
-          body: JSON.stringify(body)
+          role: 'system',
+          content: `You are an expert code generation assistant. Generate clean, well-documented code in ${language || 'the requested language'}. ${context || ''}`
+        },
+        {
+          role: 'user',
+          content: `Generate code based on this description: ${description}`
         }
-      );
-      
-      const duration = Date.now() - startTime;
-      
-      if (response.ok) {
+      ],
+      max_tokens: 1024,
+      temperature: 0.7
+    };
+
+    const response = await providerFactory.complete(request);
+    const generatedCode = response.choices[0].message.content;
+
+    res.json({
+      code: generatedCode
+    });
+  } catch (error) {
+    console.error("Code generation error:", error);
+    res.status(500).json({
+      error: "Code generation failed",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Route for code refactoring
+ */
+app.post("/v1/code/refactor", async (req, res) => {
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
+  try {
+    const { code, target_improvements, language } = req.body;
+
+    const request = {
+      model: 'openrouter/auto',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert code refactoring assistant. Refactor the provided code to improve ${target_improvements || 'readability and performance'}. Maintain functionality while improving code quality. Language: ${language || 'any'}.`
+        },
+        {
+          role: 'user',
+          content: `Refactor this code:\n\n${code}`
+        }
+      ],
+      max_tokens: 1024,
+      temperature: 0.5
+    };
+
+    const response = await providerFactory.complete(request);
+    const refactoredCode = response.choices[0].message.content;
+
+    res.json({
+      refactored_code: refactoredCode
+    });
+  } catch (error) {
+    console.error("Code refactoring error:", error);
+    res.status(500).json({
+      error: "Code refactoring failed",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Route for running goal-oriented tasks
+ */
+app.post("/v1/orchestrate-goal", async (req, res) => {
+  if (!orchestrationEngine) {
+    return res.status(500).json({ error: "Orchestration engine not initialized" });
+  }
+
+  try {
+    const { goal, context } = req.body;
+
+    // Process the goal using orchestration engine
+    const result = await orchestrationEngine.executeGoal(goal, context);
+
+    res.json({
+      result: result
+    });
+  } catch (error) {
+    console.error("Goal orchestration error:", error);
+    res.status(500).json({
+      error: "Goal orchestration failed",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Route for self-healing process
+ */
+app.post("/v1/heal", async (req, res) => {
+  if (!selfHealingLayer) {
+    return res.status(500).json({ error: "Self-healing layer not initialized" });
+  }
+
+  try {
+    const { files, run_tests } = req.body;
+
+    const report = await selfHealingLayer.heal(files, run_tests);
+
+    res.json({
+      report: report
+    });
+  } catch (error) {
+    console.error("Healing process error:", error);
+    res.status(500).json({
+      error: "Healing process failed",
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Load routes from subdirectories
+ */
+async function loadRoutes() {
+  const routesDir = path.join(__dirname, 'routes');
+  const routeFiles = await fs.readdir(routesDir);
+
+  for (const file of routeFiles) {
+    if (file.endsWith('.js')) {
+      const routeModule = await import(path.join(routesDir, file));
+      const routePath = `/v1/${file.replace('.js', '')}`;
+      app.use(routePath, routeModule.default);
+      console.log(`📋 Loaded route: ${routePath}`);
+    }
+  }
+}
+
+/**
+ * Start the server after initialization
+ */
+async function startServer() {
+  await initializeProviders();
+  await initializeComponents();
+  await loadRoutes();
+  
+  app.listen(PORT, LISTEN_ADDRESS, () => {
+    console.log(`🚀 CEL v4.2.1 server running on http://${LISTEN_ADDRESS}:${PORT}`);
+    console.log(`📊 ProviderFactory ready with ${providerFactory ? providerFactory.getFallbackChain().length : 0} providers in chain`);
+    console.log(`🧠 Semantic cache initialized with ${semanticCache ? semanticCache.getStats().size : 0} entries`);
+    console.log(`🔍 RAG engine loaded ${ragEngine ? ragEngine.getStats().totalChunks : 0} chunks from ${ragEngine ? ragEngine.getStats().totalDocs : 0} documents`);
+    console.log(`🔐 Keychain manager initialized: ${!!keychainManager}`);
+    console.log(`🛡️ Self-healing layer initialized: ${!!selfHealingLayer}`);
+    console.log(`🔒 Protected endpoints listening on ${LISTEN_ADDRESS}`);
+  });
+}
+
+// Start the server
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
+
+// Error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+export default app;
+
+export default app;
+
+export default app;
+
+export default app;
+
         // Обновляем производительность модели
         costOptimizer.updateModelPerformance(model, duration, true, 0);
         

@@ -1,9 +1,10 @@
+import { vi, describe, test, expect, beforeEach } from 'vitest';
 import { CELService } from '../../services/CELService';
 
 // Mock node-fetch
-jest.mock('node-fetch');
+vi.mock('node-fetch');
 import fetch from 'node-fetch';
-const { Response } = jest.requireActual('node-fetch');
+const { Response } = await import('node-fetch');
 
 describe('CELService', () => {
   let celService: CELService;
@@ -12,7 +13,7 @@ describe('CELService', () => {
 
   beforeEach(() => {
     celService = new CELService(mockBaseUrl, mockModel);
-    (fetch as jest.Mock).mockClear();
+    (fetch as vi.Mock).mockClear();
   });
 
   describe('constructor', () => {
@@ -33,9 +34,9 @@ describe('CELService', () => {
         choices: [{ message: { content: 'Test response' } }]
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as vi.Mock).mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse)
+        json: vi.fn().mockResolvedValue(mockResponse)
       });
 
       const messages = [{ role: 'user' as const, content: 'Hello' }];
@@ -58,24 +59,24 @@ describe('CELService', () => {
     });
 
     test('should throw error when API call fails', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as vi.Mock).mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
       });
 
       const messages = [{ role: 'user' as const, content: 'Hello' }];
-      
+
       await expect(celService.chat(messages))
         .rejects
         .toThrow('Failed to communicate with CEL: CEL API error: 500 Internal Server Error');
     });
 
     test('should handle network errors', async () => {
-      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as vi.Mock).mockRejectedValue(new Error('Network error'));
 
       const messages = [{ role: 'user' as const, content: 'Hello' }];
-      
+
       await expect(celService.chat(messages))
         .rejects
         .toThrow('Failed to communicate with CEL: Network error');
@@ -85,10 +86,10 @@ describe('CELService', () => {
   // ... остальные тесты остаются без изменений
   describe('generateCode', () => {
     test('should call chat with code generation prompt', async () => {
-      const mockChat = jest.spyOn(celService, 'chat').mockResolvedValue('Generated code');
-      
+      const mockChat = vi.spyOn(celService, 'chat').mockResolvedValue('Generated code');
+
       const result = await celService.generateCode('create a function');
-      
+
       expect(mockChat).toHaveBeenCalledWith([
         {
           role: 'system',
@@ -103,10 +104,10 @@ describe('CELService', () => {
     });
 
     test('should include context when provided', async () => {
-      const mockChat = jest.spyOn(celService, 'chat').mockResolvedValue('Generated code');
-      
+      const mockChat = vi.spyOn(celService, 'chat').mockResolvedValue('Generated code');
+
       await celService.generateCode('create a function', 'React component');
-      
+
       expect(mockChat).toHaveBeenCalledWith([
         expect.any(Object),
         {
@@ -120,20 +121,20 @@ describe('CELService', () => {
   describe('getStatus', () => {
     test('should make GET request to health endpoint', async () => {
       const mockStatus = { status: 'ok', version: '1.0.0' };
-      
-      (fetch as jest.Mock).mockResolvedValue({
+
+      (fetch as vi.Mock).mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockStatus)
+        json: vi.fn().mockResolvedValue(mockStatus)
       });
 
       const result = await celService.getStatus();
-      
+
       expect(fetch).toHaveBeenCalledWith(`${mockBaseUrl}/health`);
       expect(result).toEqual(mockStatus);
     });
 
     test('should throw error when status request fails', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as vi.Mock).mockResolvedValue({
         ok: false
       });
 

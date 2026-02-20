@@ -1,0 +1,315 @@
+openapi: 3.0.0
+info:
+  title: Cognitive Execution Layer (CEL)
+  description: LLM Control Plane for Autonomous Engineering and Xcode Integration
+  version: 4.2.1
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Health status of the system
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    type: string
+                  uptime:
+                    type: number
+                  gshi:
+                    type: number
+                  components:
+                    type: object
+  /v1/models:
+    get:
+      summary: List available models
+      responses:
+        '200':
+          description: List of available models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        object:
+                          type: string
+                        created:
+                          type: number
+                        owned_by:
+                          type: string
+  /v1/chat/completions:
+    post:
+      summary: Chat completions compatible endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - model
+                - messages
+              properties:
+                model:
+                  type: string
+                  description: ID of the model to use
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - role
+                      - content
+                    properties:
+                      role:
+                        type: string
+                        enum: [system, user, assistant]
+                      content:
+                        type: string
+                stream:
+                  type: boolean
+                  description: Whether to stream the response
+                temperature:
+                  type: number
+                  description: Sampling temperature
+                max_tokens:
+                  type: number
+                  description: Maximum number of tokens to generate
+      responses:
+        '200':
+          description: Completion response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+        '400':
+          description: Invalid request
+        '500':
+          description: Internal server error
+  /v1/orchestrate-goal:
+    post:
+      summary: Execute a goal-oriented task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - goal
+              properties:
+                goal:
+                  type: string
+                  description: The goal to be executed
+                context:
+                  type: string
+                  description: Additional context for the goal
+      responses:
+        '200':
+          description: Result of the goal execution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+  /v1/xcode/health:
+    get:
+      summary: Xcode integration health check
+      responses:
+        '200':
+          description: Health status of Xcode integration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  connected:
+                    type: boolean
+  /v1/code/generate:
+    post:
+      summary: Generate code based on description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                description:
+                  type: string
+                  description: Description of the code to generate
+                language:
+                  type: string
+                  description: Programming language
+                context:
+                  type: string
+                  description: Additional context
+      responses:
+        '200':
+          description: Generated code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+  /v1/code/refactor:
+    post:
+      summary: Refactor existing code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: Original code to refactor
+                target_improvements:
+                  type: string
+                  description: Description of desired improvements
+                language:
+                  type: string
+                  description: Programming language
+      responses:
+        '200':
+          description: Refactored code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refactored_code:
+                    type: string
+  /v1/testing/generate:
+    post:
+      summary: Generate tests for code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - filename
+              properties:
+                code:
+                  type: string
+                  description: Code to generate tests for
+                filename:
+                  type: string
+                  description: Name of the file being tested
+                framework:
+                  type: string
+                  description: Testing framework to use
+                coverage_target:
+                  type: number
+                  description: Target coverage percentage
+      responses:
+        '200':
+          description: Generated tests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tests:
+                    type: string
+  /v1/heal:
+    post:
+      summary: Run self-healing process
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                  description: Files to heal
+                run_tests:
+                  type: boolean
+                  description: Whether to run tests after healing
+      responses:
+        '200':
+          description: Healing report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: string
+components:
+  schemas:
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        created:
+          type: number
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: number
+              message:
+                type: object
+                properties:
+                  role:
+                    type: string
+                  content:
+                    type: string
+              finish_reason:
+                type: string
+        usage:
+          type: object
+          properties:
+            prompt_tokens:
+              type: number
+            completion_tokens:
+              type: number
+            total_tokens:
+              type: number

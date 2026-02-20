@@ -321,7 +321,7 @@ export function createApiMiddleware(options = {}) {
     } = options;
 
     // Cleanup old entries periodically
-    setInterval(() => {
+    const cleanupInterval = setInterval(() => {
       const now = Date.now();
       for (const [key, value] of rateLimitStore.entries()) {
         if (now - value.windowStart > windowMs * 2) {
@@ -329,6 +329,9 @@ export function createApiMiddleware(options = {}) {
         }
       }
     }, windowMs);
+    
+    // Allow process to exit even with active interval
+    cleanupInterval.unref();
 
     return (req, res, next) => {
       if (skipCondition(req)) {

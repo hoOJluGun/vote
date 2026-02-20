@@ -1,31 +1,32 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs/promises';
 import { FileUtils, GitUtils, Logger } from '../../utils';
 
 // Mock fs module
-jest.mock('fs/promises');
+vi.mock('fs/promises');
 
 describe('FileUtils', () => {
   const mockFilePath = '/test/file.js';
   const mockContent = 'console.log("test");';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('readFile', () => {
     test('should read file content successfully', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue(mockContent);
-      
+      (fs.readFile as vi.Mock).mockResolvedValue(mockContent);
+
       const result = await FileUtils.readFile(mockFilePath);
-      
+
       expect(fs.readFile).toHaveBeenCalledWith(mockFilePath, 'utf8');
       expect(result).toBe(mockContent);
     });
 
     test('should throw error when file reading fails', async () => {
       const errorMessage = 'File not found';
-      (fs.readFile as jest.Mock).mockRejectedValue(new Error(errorMessage));
-      
+      (fs.readFile as vi.Mock).mockRejectedValue(new Error(errorMessage));
+
       await expect(FileUtils.readFile(mockFilePath))
         .rejects
         .toThrow(`Failed to read file ${mockFilePath}: ${errorMessage}`);
@@ -34,17 +35,17 @@ describe('FileUtils', () => {
 
   describe('writeFile', () => {
     test('should write file content successfully', async () => {
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-      
+      (fs.writeFile as vi.Mock).mockResolvedValue(undefined);
+
       await FileUtils.writeFile(mockFilePath, mockContent);
-      
+
       expect(fs.writeFile).toHaveBeenCalledWith(mockFilePath, mockContent, 'utf8');
     });
 
     test('should throw error when file writing fails', async () => {
       const errorMessage = 'Permission denied';
-      (fs.writeFile as jest.Mock).mockRejectedValue(new Error(errorMessage));
-      
+      (fs.writeFile as vi.Mock).mockRejectedValue(new Error(errorMessage));
+
       await expect(FileUtils.writeFile(mockFilePath, mockContent))
         .rejects
         .toThrow(`Failed to write file ${mockFilePath}: ${errorMessage}`);
@@ -53,19 +54,19 @@ describe('FileUtils', () => {
 
   describe('fileExists', () => {
     test('should return true when file exists', async () => {
-      (fs.access as jest.Mock).mockResolvedValue(undefined);
-      
+      (fs.access as vi.Mock).mockResolvedValue(undefined);
+
       const result = await FileUtils.fileExists(mockFilePath);
-      
+
       expect(result).toBe(true);
       expect(fs.access).toHaveBeenCalledWith(mockFilePath);
     });
 
     test('should return false when file does not exist', async () => {
-      (fs.access as jest.Mock).mockRejectedValue(new Error('File not found'));
-      
+      (fs.access as vi.Mock).mockRejectedValue(new Error('File not found'));
+
       const result = await FileUtils.fileExists(mockFilePath);
-      
+
       expect(result).toBe(false);
     });
   });
@@ -74,16 +75,16 @@ describe('FileUtils', () => {
     test('should create backup with timestamp', async () => {
       const originalContent = 'original content';
       const backupPath = `${mockFilePath}.backup.${Date.now()}`;
-      
-      (fs.readFile as jest.Mock).mockResolvedValue(originalContent);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-      
+
+      (fs.readFile as vi.Mock).mockResolvedValue(originalContent);
+      (fs.writeFile as vi.Mock).mockResolvedValue(undefined);
+
       // Mock Date.now to return predictable value
       const mockTimestamp = 1234567890;
-      jest.spyOn(global.Date, 'now').mockImplementation(() => mockTimestamp);
-      
+      vi.spyOn(global.Date, 'now').mockImplementation(() => mockTimestamp);
+
       const result = await FileUtils.createBackup(mockFilePath);
-      
+
       expect(result).toBe(`${mockFilePath}.backup.${mockTimestamp}`);
       expect(fs.readFile).toHaveBeenCalledWith(mockFilePath, 'utf8');
       expect(fs.writeFile).toHaveBeenCalledWith(
@@ -96,10 +97,10 @@ describe('FileUtils', () => {
 });
 
 describe('Logger', () => {
-  let consoleSpy: jest.SpyInstance;
+  let consoleSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined as unknown as void);
   });
 
   afterEach(() => {

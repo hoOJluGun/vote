@@ -4,6 +4,8 @@
  * Unit tests for Orchestration Engine
  */
 
+import { vi } from 'vitest';
+
 import {
   OrchestrationEngine,
   GOAL_TYPES,
@@ -194,7 +196,7 @@ describe('OrchestrationEngine', () => {
     });
 
     test('should handle task timeouts', async () => {
-      const slowHandler = jest.fn().mockImplementation(() => {
+      const slowHandler = vi.fn().mockImplementation(() => {
         return new Promise((resolve) => setTimeout(() => resolve('slow'), 2000));
       });
 
@@ -216,7 +218,7 @@ describe('OrchestrationEngine', () => {
     });
 
     test('should retry failed tasks', async () => {
-      const failingHandler = jest.fn().mockRejectedValue(new Error('Task failed'));
+      const failingHandler = vi.fn().mockRejectedValue(new Error('Task failed'));
       engine.registerTaskHandler('failing-task', failingHandler);
 
       const task = await engine.createTask({

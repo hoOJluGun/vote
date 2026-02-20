@@ -1,0 +1,372 @@
+{
+  "project_structure": {
+    "root": {
+      "type": "directory",
+      "files": [
+        {
+          "name": "package.json",
+          "size": "3.3KB",
+          "responsibility": "Project metadata, dependencies, scripts",
+          "critical": true
+        },
+        {
+          "name": "README.md",
+          "size": "13.1KB",
+          "responsibility": "Project documentation and usage guide",
+          "critical": true
+        },
+        {
+          "name": "PROJECT_STRUCTURE.md",
+          "size": "13.3KB",
+          "responsibility": "Detailed project architecture documentation",
+          "critical": true
+        }
+      ],
+      "directories": [
+        {
+          "name": "src",
+          "type": "directory",
+          "responsibility": "Main source code directory",
+          "subdirectories": [
+            {
+              "name": "server",
+              "type": "directory",
+              "responsibility": "Express server implementation",
+              "files": [
+                {
+                  "name": "index.js",
+                  "size": "125KB",
+                  "responsibility": "Main server entry point with all routes and components",
+                  "critical": true,
+                  "monolithic": true
+                }
+              ]
+            },
+            {
+              "name": "engines",
+              "type": "directory",
+              "responsibility": "Core system engines and components",
+              "files": [
+                {
+                  "name": "advanced-usage-tracker.js",
+                  "size": "8KB",
+                  "responsibility": "Usage tracking and analytics"
+                },
+                {
+                  "name": "cost-optimizer.js",
+                  "size": "12KB",
+                  "responsibility": "Cost optimization and model selection"
+                },
+                {
+                  "name": "orchestration-engine.js",
+                  "size": "35KB",
+                  "responsibility": "Task orchestration and goal management"
+                },
+                {
+                  "name": "project-context-analyzer.js",
+                  "size": "15KB",
+                  "responsibility": "Project context analysis and metadata extraction"
+                },
+                {
+                  "name": "code-tester-linter.js",
+                  "size": "25KB",
+                  "responsibility": "Code testing and linting utilities"
+                },
+                {
+                  "name": "code-analysis.js",
+                  "size": "18KB",
+                  "responsibility": "Static code analysis"
+                },
+                {
+                  "name": "code-applier.js",
+                  "size": "14KB",
+                  "responsibility": "Code changes application"
+                },
+                {
+                  "name": "virtual-sandbox.js",
+                  "size": "16KB",
+                  "responsibility": "Safe code execution sandbox"
+                },
+                {
+                  "name": "project-knowledge-graph.js",
+                  "size": "22KB",
+                  "responsibility": "Project knowledge representation"
+                },
+                {
+                  "name": "cognitive-workspace-core.js",
+                  "size": "28KB",
+                  "responsibility": "Cognitive workspace management"
+                },
+                {
+                  "name": "solution-evaluation-model.js",
+                  "size": "19KB",
+                  "responsibility": "Solution quality evaluation"
+                },
+                {
+                  "name": "deterministic-execution-layer.js",
+                  "size": "24KB",
+                  "responsibility": "Deterministic execution and replay"
+                },
+                {
+                  "name": "formal-safety-model.js",
+                  "size": "20KB",
+                  "responsibility": "Formal safety verification"
+                },
+                {
+                  "name": "stability-theory-engine.js",
+                  "size": "26KB",
+                  "responsibility": "System stability management"
+                },
+                {
+                  "name": "evolution-engine.js",
+                  "size": "31KB",
+                  "responsibility": "Architecture evolution tracking"
+                },
+                {
+                  "name": "anti-stagnation-engine.js",
+                  "size": "17KB",
+                  "responsibility": "Anti-stagnation mechanisms"
+                },
+                {
+                  "name": "constraint-solver.js",
+                  "size": "21KB",
+                  "responsibility": "Constraint solving and optimization"
+                }
+              ]
+            },
+            {
+              "name": "providers",
+              "type": "directory",
+              "responsibility": "LLM provider integrations",
+              "files": [
+                {
+                  "name": "provider-factory.js",
+                  "size": "15KB",
+                  "responsibility": "Provider factory and fallback management"
+                },
+                {
+                  "name": "base-provider.js",
+                  "size": "8KB",
+                  "responsibility": "Base provider interface"
+                },
+                {
+                  "name": "ollama-provider.js",
+                  "size": "12KB",
+                  "responsibility": "Ollama provider implementation"
+                },
+                {
+                  "name": "openrouter-provider.js",
+                  "size": "14KB",
+                  "responsibility": "OpenRouter provider implementation"
+                }
+              ]
+            },
+            {
+              "name": "security",
+              "type": "directory",
+              "responsibility": "Security components",
+              "files": [
+                {
+                  "name": "keychain-manager.js",
+                  "size": "11KB",
+                  "responsibility": "Keychain integration for macOS"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "security",
+          "type": "directory",
+          "responsibility": "Security-related components",
+          "files": [
+            {
+              "name": "vault-manager.js",
+              "size": "8KB",
+              "responsibility": "Vault secrets management (new)",
+              "critical": true,
+              "status": "implemented"
+            },
+            {
+              "name": "client-encryption.js",
+              "size": "12KB",
+              "responsibility": "Client-side encryption utilities (new)",
+              "critical": true,
+              "status": "implemented"
+            },
+            {
+              "name": "security-framework.js",
+              "size": "18KB",
+              "responsibility": "Legacy security framework"
+            }
+          ]
+        },
+        {
+          "name": "xcode",
+          "type": "directory",
+          "responsibility": "Xcode integration components",
+          "subdirectories": [
+            {
+              "name": "CELClient",
+              "type": "directory",
+              "responsibility": "Swift client implementation",
+              "files": [
+                {
+                  "name": "Package.swift",
+                  "size": "2KB",
+                  "responsibility": "Swift package manifest (new)",
+                  "critical": true,
+                  "status": "implemented"
+                },
+                {
+                  "name": "Sources/CELClient/CELClient.swift",
+                  "size": "15KB",
+                  "responsibility": "Swift client protocol and implementation (new)",
+                  "critical": true,
+                  "status": "implemented"
+                },
+                {
+                  "name": "Tests/CELClientTests/CELClientTests.swift",
+                  "size": "5KB",
+                  "responsibility": "Swift client tests (new)",
+                  "status": "implemented"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "__tests__",
+          "type": "directory",
+          "responsibility": "Test suites",
+          "subdirectories": [
+            {
+              "name": "unit",
+              "type": "directory",
+              "responsibility": "Unit tests",
+              "files": [
+                {
+                  "name": "vault-manager.test.js",
+                  "size": "4KB",
+                  "responsibility": "Vault manager unit tests (new)",
+                  "status": "implemented",
+                  "passing": 19
+                },
+                {
+                  "name": "client-encryption.test.js",
+                  "size": "6KB",
+                  "responsibility": "Client encryption unit tests (new)",
+                  "status": "implemented",
+                  "passing": 13
+                },
+                {
+                  "name": "api-middleware.test.js",
+                  "size": "3KB",
+                  "responsibility": "API middleware tests",
+                  "status": "broken",
+                  "issue": "Uses vitest instead of jest"
+                }
+              ]
+            },
+            {
+              "name": "integration",
+              "type": "directory",
+              "responsibility": "Integration tests",
+              "files": [
+                {
+                  "name": "server-integration.test.js",
+                  "size": "8KB",
+                  "responsibility": "Server integration tests"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "lib",
+          "type": "directory",
+          "responsibility": "Utility libraries",
+          "files": [
+            {
+              "name": "self-healing-layer.js",
+              "size": "14KB",
+              "responsibility": "Self-healing mechanisms"
+            }
+          ]
+        },
+        {
+          "name": "cli",
+          "type": "directory",
+          "responsibility": "Command-line interface",
+          "files": [
+            {
+              "name": "package.json",
+              "size": "1KB",
+              "responsibility": "CLI package configuration"
+            }
+          ]
+        },
+        {
+          "name": "config",
+          "type": "directory",
+          "responsibility": "Configuration files",
+          "files": [
+            {
+              "name": ".env.example",
+              "size": "1KB",
+              "responsibility": "Environment variables template"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "dependency_graph": {
+    "security": {
+      "depends_on": ["keychain-manager.js"],
+      "dependencies": []
+    },
+    "vault-manager.js": {
+      "depends_on": [],
+      "dependencies": ["axios"]
+    },
+    "client-encryption.js": {
+      "depends_on": [],
+      "dependencies": ["crypto"]
+    },
+    "src/server/index.js": {
+      "depends_on": [
+        "src/engines/*",
+        "src/providers/*",
+        "src/security/*",
+        "lib/*"
+      ],
+      "dependencies": [
+        "express",
+        "node-fetch",
+        "dotenv"
+      ],
+      "monolithic": true
+    }
+  },
+  "critical_issues": [
+    {
+      "file": "src/server/index.js",
+      "issue": "Monolithic 3195-line file containing all server logic",
+      "priority": "high",
+      "impact": "Maintainability and testability severely compromised"
+    },
+    {
+      "file": "__tests__/unit/api-middleware.test.js",
+      "issue": "Uses vitest instead of jest causing test failures",
+      "priority": "medium",
+      "impact": "Test suite broken"
+    },
+    {
+      "file": "security/security-framework.js",
+      "issue": "Legacy security implementation with hardcoded keys",
+      "priority": "high",
+      "impact": "Security vulnerabilities"
+    }
+  ]
+}

@@ -4,15 +4,15 @@
   "description": "Cognitive Execution Layer Command Line Interface - Enhanced TypeScript Version",
   "type": "module",
   "bin": {
-    "cel": "./dist/index.js"
+    "cel": "./enhanced-cli.js"
   },
   "files": [
-    "dist/**/*"
+    "enhanced-cli.js"
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "node ./enhanced-cli.js",
+    "start": "node ./enhanced-cli.js",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "postbuild": "chmod +x dist/index.js && echo '{\"type\":\"module\",\"name\":\"cognitive-execution-cli-dist\",\"version\":\"2.0.0\"}' > dist/package.json",
@@ -27,7 +27,14 @@
     "commander": "^11.0.0",
     "gradient-string": "^2.0.2",
     "node-fetch": "^3.3.2",
-    "ora": "^7.0.1"
+    "ora": "^7.0.1",
+    "zustand": "^4.4.1",
+    "lucide-react": "^0.312.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "inquirer": "^8.2.6",
+    "cli-table3": "^0.6.3",
+    "figlet": "^1.7.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

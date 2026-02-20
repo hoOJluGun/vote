@@ -3,11 +3,11 @@
  * @module __tests__/unit/api-middleware.test.js
  */
 
-import { jest } from '@jest/globals';
+import { vi, describe, it, test, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock uuid
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'test-correlation-id-1234'),
+vi.mock('uuid', () => ({
+  v4: vi.fn(() => 'test-correlation-id-1234'),
 }));
 
 import { createApiMiddleware, ApiError, ValidationError, AuthenticationError, NotFoundError, RateLimitError } from '../../src/server/middleware/api-middleware.js';
@@ -22,15 +22,15 @@ describe('API Middleware', () => {
 
   beforeEach(() => {
     mockLogger = {
-      log: jest.fn(),
-      info: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
     };
 
     mockSecurityFramework = {
-      validateApiKey: jest.fn().mockResolvedValue(true),
-      validateToken: jest.fn().mockResolvedValue({ valid: true, user: { id: 'user-123' } }),
+      validateApiKey: vi.fn().mockResolvedValue(true),
+      validateToken: vi.fn().mockResolvedValue({ valid: true, user: { id: 'user-123' } }),
     };
 
     middleware = createApiMiddleware({
@@ -47,18 +47,18 @@ describe('API Middleware', () => {
     };
 
     mockRes = {
-      setHeader: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
-      on: jest.fn(),
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      on: vi.fn(),
     };
 
-    mockNext = jest.fn();
+    mockNext = vi.fn();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('correlationId middleware', () => {
@@ -268,11 +268,11 @@ describe('API Middleware', () => {
 
   describe('rateLimit middleware', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('should allow requests within limit', () => {
@@ -393,11 +393,11 @@ describe('API Middleware', () => {
 
   describe('timeout middleware', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('should call next immediately', () => {
@@ -414,7 +414,7 @@ describe('API Middleware', () => {
 
       timeout(mockReq, mockRes, mockNext);
 
-      jest.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(5000);
 
       expect(mockRes.status).toHaveBeenCalledWith(408);
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -520,8 +520,8 @@ describe('Schema Validation', () => {
       body: { messages: [{ role: 'user', content: 'Hello' }] },
       correlationId: 'test',
     };
-    const validRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-    const validNext = jest.fn();
+    const validRes = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const validNext = vi.fn();
 
     validate(validReq, validRes, validNext);
     expect(validNext).toHaveBeenCalled();
@@ -534,8 +534,8 @@ describe('Schema Validation', () => {
       body: { context: {} },
       correlationId: 'test',
     };
-    const invalidRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-    const invalidNext = jest.fn();
+    const invalidRes = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const invalidNext = vi.fn();
 
     validate(invalidReq, invalidRes, invalidNext);
     expect(invalidRes.status).toHaveBeenCalledWith(400);

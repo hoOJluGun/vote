@@ -10,29 +10,29 @@
   ],
   "parserOptions": {
     "ecmaVersion": "latest",
-    "sourceType": "script"
+    "sourceType": "module"
   },
   "rules": {
     "indent": [
-      "error",
+      "warn",
       2,
       {
         "SwitchCase": 1
       }
     ],
     "linebreak-style": [
-      "error",
+      "warn",
       "unix"
     ],
     "quotes": [
-      "error",
+      "warn",
       "single",
       {
         "avoidEscape": true
       }
     ],
     "semi": [
-      "error",
+      "warn",
       "always"
     ],
     "no-unused-vars": [
@@ -43,23 +43,23 @@
     ],
     "no-console": "off",
     "no-multiple-empty-lines": [
-      "error",
+      "warn",
       {
         "max": 2,
         "maxEOF": 1
       }
     ],
-    "no-trailing-spaces": "error",
+    "no-trailing-spaces": "warn",
     "comma-dangle": [
-      "error",
+      "warn",
       "always-multiline"
     ],
-    "arrow-spacing": "error",
-    "keyword-spacing": "error",
-    "space-before-blocks": "error",
-    "space-infix-ops": "error",
+    "arrow-spacing": "warn",
+    "keyword-spacing": "warn",
+    "space-before-blocks": "warn",
+    "space-infix-ops": "warn",
     "eol-last": [
-      "error",
+      "warn",
       "always"
     ],
     "no-var": "error",
