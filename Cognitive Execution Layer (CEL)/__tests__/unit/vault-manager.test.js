@@ -196,7 +196,7 @@ describe('VaultSecretsManager', () => {
     });
 
     test('should list secrets successfully', async () => {
-      mock.onGet('/v1/secret/metadata/myapp/').reply(200, {
+      mock.onGet('/v1/secret/metadata/myapp/?list=true').reply(200, {
         data: {
           keys: ['database/', 'api-keys/']
         }
