@@ -1,22 +1,25 @@
 /**
- * LLM Control Plane v4.0 - Next Generation Agent IDE Orchestration Engine
+ * LLM Control Plane v4.2.1 - Next Generation Agent IDE Orchestration Engine
  * 
- * Основной production-сервер с полным набором функций:
- * - Интеллектуальный оркестратор среды разработки
- * - Граф знаний проекта
- * - Многоагентная архитектура
- * - Система симуляции и оценки решений
- * - Самообучающийся цикл улучшения
- * - Когнитивное рабочее пространство
- * - Протокол взаимодействия агентов
- * - Математическая модель оценки решений
- * - Детерминистский слой выполнения
- * - Управление ресурсами
- * - Формальная модель безопасности
- * - Теория устойчивости
- * - Эволюционный движок
- * - Анти-застревающий механизм
- * - Решатель ограничений
+ * Main production server with full set of features:
+ * - Intelligent development environment orchestrator
+ * - Project knowledge graph
+ * - Multi-agent architecture
+ * - Simulation and solution evaluation system
+ * - Self-learning improvement cycle
+ * - Cognitive workspace
+ * - Agent protocol
+ * - Mathematical solution evaluation model
+ * - Deterministic execution layer
+ * - Resource management
+ * - Formal safety model
+ * - Stability theory
+ * - Evolution engine
+ * - Anti-stagnation mechanism
+ * - Constraint solver
+ * - Semantic caching for cost optimization
+ * - ProviderFactory for flexible LLM routing
+ * - RAG engine for context optimization
  */
 
 import express from "express";
@@ -45,6 +48,9 @@ import { StabilityTheoryEngine } from '../engines/stability-theory-engine.js';
 import { EvolutionEngine } from '../engines/evolution-engine.js';
 import { AntiStagnationEngine } from '../engines/anti-stagnation-engine.js';
 import { ConstraintSolver } from '../engines/constraint-solver.js';
+import { getProviderFactory } from '../providers/provider-factory.js';
+import { getSemanticCache } from '../engines/semantic-cache.js';
+import { getRAGEngine } from '../engines/rag-engine.js';
 
 // Для обслуживания статических файлов
 const __filename = fileURLToPath(import.meta.url);
@@ -60,8 +66,8 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, '..', '..', 'public')));
 
 const PORT = process.env.PORT || 3000;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE = process.env.OPENROUTER_BASE;
+const OPENROUTER_BASE = process.env.OPENROUTER_BASE || 'https://openrouter.ai/api/v1';
+
 // Используем 127.0.0.1 для локального доступа
 const LISTEN_ADDRESS = '127.0.0.1';
 
@@ -69,6 +75,10 @@ const LISTEN_ADDRESS = '127.0.0.1';
 const USAGE_BUDGET_LIMIT = parseInt(process.env.USAGE_BUDGET_LIMIT) || null;
 const usageTracker = new AdvancedUsageTracker(USAGE_BUDGET_LIMIT);
 const costOptimizer = new CostOptimizer();
+
+// Инициализируем ProviderFactory
+let providerFactory = null;
+let semanticCache = null;
 
 // Менеджеры для проекта
 let fileAgentManager = null;
@@ -98,353 +108,304 @@ let constraintSolver = null;
 // Загружаем существующие логи
 usageTracker.loadLogs();
 
-if (!OPENROUTER_API_KEY) {
-  console.error("❌ Missing OPENROUTER_API_KEY in .env");
-  process.exit(1);
-}
-
-if (!OPENROUTER_BASE) {
-  console.error("❌ Missing OPENROUTER_BASE in .env");
-  process.exit(1);
-}
-
 /**
- * Список всех бесплатных моделей
+ * Initialize providers and other core components
  */
-const ALL_FREE_MODELS = [
-  "upstage/solar-pro-3:free",
-  "openai/gpt-oss-20b:free",
-  "arcee-ai/trinity-large-preview:free",
-  "stepfun/step-3.5-flash:free",
-  "z-ai/glm-4.5-air:free",
-  "deepseek/deepseek-r1-0528:free",
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-  "openai/gpt-oss-120b:free",
-  "arcee-ai/trinity-mini:free",
-  "nvidia/nemotron-nano-9b-v2:free",
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-coder:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "google/gemma-3-27b-it:free",
-  "liquid/lfm-2.5-1.2b-thinking:free",
-  "liquid/lfm-2.5-1.2b-instruct:free",
-  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "google/gemma-3n-e4b-it:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
-  "google/gemma-3n-e2b-it:free",
-  "qwen/qwen3-4b:free",
-  "google/gemma-3-4b-it:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "google/gemma-3-12b-it:free"
-];
-
-/**
- * Группировка моделей по типу и возможностям
- */
-const MODEL_GROUPS = {
-  // Быстрые и легковесные для коротких запросов
-  fast: [
-    "stepfun/step-3.5-flash:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "google/gemma-3-4b-it:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "liquid/lfm-2.5-1.2b-instruct:free"
-  ],
-  // Баланс между возможностями и скоростью
-  balanced: [
-    "upstage/solar-pro-3:free",
-    "z-ai/glm-4.5-air:free",
-    "google/gemma-3-12b-it:free",
-    "qwen/qwen3-4b:free",
-    "google/gemma-3-27b-it:free"
-  ],
-  // Более способные для сложных запросов
-  capable: [
-    "arcee-ai/trinity-large-preview:free",
-    "qwen/qwen3-coder:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "openai/gpt-oss-20b:free",
-    "meta-llama/llama-3.3-70b-instruct:free"
-  ],
-  // Мощные для сложных задач
-  powerful: [
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "nousresearch/hermes-3-llama-3.1-405b:free",
-    "openai/gpt-oss-120b:free",
-    "deepseek/deepseek-r1-0528:free",
-    "nvidia/nemotron-3-nano-30b-a3b:free"
-  ]
-};
-
-/**
- * Комбинированный список моделей для fallback
- */
-let FALLBACK_MODELS = ALL_FREE_MODELS;
-
-/**
- * Проверяем, является ли статус причиной для fallback
- */
-function shouldFallback(status) {
-  return status === 429 || status === 402 || status === 503;
-}
-
-/**
- * Оценка длины промпта в токенах (приблизительно)
- * Это грубая оценка - в реальном приложении лучше использовать tiktoken или аналог
- */
-function estimatePromptTokens(messages) {
-  const text = messages.map(msg => msg.content).join(' ');
-  // Грубая оценка: 1 токен ≈ 4 символа
-  return Math.ceil(text.length / 4);
-}
-
-/**
- * Определение типа задачи по содержимому запроса
- */
-function detectTaskType(messages) {
-  // Получаем последнюю сообщение
-  const lastMessage = messages[messages.length - 1];
-  
-  // Извлекаем содержимое сообщения
-  let content = '';
-  if (lastMessage && lastMessage.content) {
-    if (typeof lastMessage.content === 'string') {
-      content = lastMessage.content;
-    } else if (typeof lastMessage.content === 'object') {
-      // Если это объект, пробуем извлечь поле text или value
-      content = lastMessage.content.text || lastMessage.content.value || '';
-    }
-  }
-  
-  // Преобразуем в нижний регистр для сравнения
-  const lowerContent = typeof content === 'string' ? content.toLowerCase() : '';
-  
-  if (lowerContent.includes('refactor') || lowerContent.includes('переформулир')) {
-    return 'refactoring';
-  } else if (lowerContent.includes('comment') || lowerContent.includes('комментарий')) {
-    return 'commenting';
-  } else if (lowerContent.includes('generate') || lowerContent.includes('create') || lowerContent.includes('создай')) {
-    return 'generation';
-  } else if (lowerContent.includes('explain') || lowerContent.includes('объясни')) {
-    return 'explanation';
-  } else {
-    return 'general';
-  }
-}
-
-/**
- * Обновляет список моделей на основе их здоровья
- */
-function updateFallbackModels() {
-  const healthyModels = costOptimizer.getHealthyModels();
-  if (healthyModels.length > 0) {
-    // Фильтруем только нужные модели
-    const targetModels = ALL_FREE_MODELS;
-    const filteredModels = healthyModels.filter(model => targetModels.includes(model));
-    
-    if (filteredModels.length > 0) {
-      FALLBACK_MODELS = filteredModels;
-      console.log(`🔄 Updated fallback models based on health: ${FALLBACK_MODELS.join(', ')}`);
-    } else {
-      // Если целевые модели не здоровы, используем все доступные
-      FALLBACK_MODELS = ALL_FREE_MODELS;
-      console.log(`⚠️ Target models not healthy, using all available models`);
-    }
-  } else {
-    // Если нет здоровых моделей, используем все
-    FALLBACK_MODELS = ALL_FREE_MODELS;
-    console.log(`⚠️ No healthy models found, using all available models`);
-  }
-}
-
-/**
- * Интеллектуальный выбор модели на основе длины промпта, типа задачи и бюджета
- */
-function selectModel(messages, taskType, tokens) {
-  // Определяем оставшийся бюджет
-  const remainingBudget = USAGE_BUDGET_LIMIT ? USAGE_BUDGET_LIMIT - usageTracker.currentTokensUsed : Infinity;
-  
-  // Используем оптимизатор для рекомендации модели
-  const recommendation = costOptimizer.recommendModel(taskType, tokens, remainingBudget);
-  
-  if (recommendation) {
-    console.log(`💡 Recommended model: ${recommendation.model} (score: ${recommendation.score.toFixed(3)}, predicted cost: $${recommendation.prediction.predictedCost.toFixed(6)})`);
-    return recommendation.model;
-  } else {
-    // Если не удается уложиться в бюджет, возвращаем первую доступную модель
-    console.log(`💰 Budget exceeded. Falling back to first available model.`);
-    return ALL_FREE_MODELS[0];
-  }
-}
-
-/**
- * Функция для добавления контекста проекта к сообщениям
- */
-function addProjectContext(messages) {
-  // Извлекаем контекст из последнего сообщения, если он есть
-  const lastMessage = messages[messages.length - 1];
-  let content = '';
-  
-  if (lastMessage && lastMessage.content) {
-    if (typeof lastMessage.content === 'string') {
-      content = lastMessage.content;
-    } else if (typeof lastMessage.content === 'object') {
-      // Если это объект, пробуем извлечь поле text или value
-      content = lastMessage.content.text || lastMessage.content.value || '';
-    }
-  }
-  
-  // Проверяем, содержит ли запрос информацию о файле
-  // Обычно Xcode передает путь к файлу и его содержимое в пользовательском сообщении
-  if (content && (content.includes('__XCODE_FILE_PATH__') || content.includes('__XCODE_SELECTION__'))) {
-    // Извлекаем информацию о файле из сообщения
-    const filePathMatch = content.match(/__XCODE_FILE_PATH__:\s*(.+?)\s*\n/);
-    const selectionMatch = content.match(/__XCODE_SELECTION__:\s*\n([\s\S]*?)\n__XCODE_/);
-    const fullTextMatch = content.match(/__XCODE_FULL_TEXT__:\s*\n([\s\S]*)/);
-    
-    if (filePathMatch || selectionMatch || fullTextMatch) {
-      // Создаем системное сообщение с контекстом проекта
-      const projectContext = {
-        role: "system",
-        content: `Контекст проекта:\n` +
-                 `- Рабочая директория: ${process.cwd()}\n` +
-                 `- Текущий файл: ${filePathMatch ? filePathMatch[1] : 'неизвестен'}\n` +
-                 `- Выделенный текст: ${selectionMatch ? selectionMatch[1] : 'не предоставлен'}\n` +
-                 `- Полный текст файла: ${fullTextMatch ? fullTextMatch[1].substring(0, 2000) + (fullTextMatch[1].length > 2000 ? '...(обрезано)' : '') : 'не предоставлен'}\n\n` +
-                 `При ответе на запрос пользователя, учитывайте этот контекст проекта.`
-      };
-      
-      // Добавляем контекст в начало сообщений
-      return [projectContext, ...messages];
-    }
-  }
-  
-  // Если Xcode не передал явный контекст, добавляем базовую информацию о проекте
-  return [{
-    role: "system",
-    content: `Контекст проекта:\n` +
-             `- Вы работаете с проектом в директории: ${process.cwd()}\n` +
-             `- Ваша задача - помочь пользователю в разработке программного обеспечения\n` +
-             `- При анализе или написании кода учитывайте, что вы работаете в контексте реального проекта\n\n` +
-             `При ответе на запрос пользователя, учитывайте этот контекст проекта.`
-  }, ...messages];
-}
-
-/**
- * 1️⃣ Эндпоинт для Xcode: получить список моделей
- */
-app.get("/v1/models", async (req, res) => {
+async function initializeProviders() {
   try {
-    // Обновляем модели перед каждым запросом (опционально, можно сделать реже)
-    updateFallbackModels();
-    
-    console.log(`📋 Models requested from ${req.ip}`);
-    res.json({
-      object: "list",
-      data: FALLBACK_MODELS.map((id) => ({
-        id,
-        object: "model",
-        created: 0,
-        owned_by: "openrouter"
-      }))
+    // Configure providers
+    const config = {
+      preferLocal: process.env.PREFER_LOCAL_MODELS !== 'false',
+      fallbackOrder: process.env.PROVIDER_FALLBACK_ORDER?.split(',') || [],
+      openrouter: {
+        baseUrl: OPENROUTER_BASE,
+        // API key will be retrieved from SecretsManager automatically
+      },
+      ollama: process.env.OLLAMA_ENABLED === 'true' ? {
+        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      } : undefined,
+    };
+
+    providerFactory = await getProviderFactory(config);
+    semanticCache = await getSemanticCache({
+      maxSize: parseInt(process.env.SEMANTIC_CACHE_SIZE) || 1000,
+      ttl: parseInt(process.env.SEMANTIC_CACHE_TTL) || 24 * 60 * 60 * 1000, // 24 hours
+      similarityThreshold: parseFloat(process.env.SEMANTIC_SIMILARITY_THRESHOLD) || 0.85
     });
+    
+    ragEngine = await getRAGEngine({
+      contextWindowSize: parseInt(process.env.CONTEXT_WINDOW_SIZE) || 3072,
+      chunkSize: parseInt(process.env.CHUNK_SIZE) || 512,
+      overlap: parseInt(process.env.OVERLAP) || 50,
+      topK: parseInt(process.env.TOP_K) || 5
+    });
+    
+    console.log('✅ ProviderFactory initialized');
+    console.log('✅ SemanticCache initialized');
+    console.log('✅ RAG Engine initialized');
   } catch (error) {
-    console.error("❌ Error in /v1/models:", error);
+    console.error('❌ Failed to initialize providers:', error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Initialize all core components
+ */
+async function initializeComponents() {
+  try {
+    fileAgentManager = new FileAgentManager();
+    orchestrationEngine = new OrchestrationEngine();
+    cognitiveWorkspace = new CognitiveWorkspaceCore();
+    agentProtocol = new AgentProtocol();
+    solutionEvaluationModel = new SolutionEvaluationModel();
+    deterministicExecutionLayer = new DeterministicExecutionLayer();
+    resourceGovernor = new ResourceGovernor();
+    formalSafetyModel = new FormalSafetyModel();
+    stabilityEngine = new StabilityTheoryEngine();
+    evolutionEngine = new EvolutionEngine();
+    antiStagnationEngine = new AntiStagnationEngine();
+    constraintSolver = new ConstraintSolver();
     
-    // Логируем ошибку
-    await usageTracker.logRequest({
-      model: 'unknown',
-      tokensIn: 0,
-      tokensOut: 0,
-      estimatedCost: 0,
-      duration: 0,
-      status: 500
-    });
+    // Load project documents for RAG if project path is provided
+    if (process.env.PROJECT_PATH) {
+      await ragEngine.loadProjectDocuments(process.env.PROJECT_PATH);
+      console.log(`📚 Loaded project documents for RAG from ${process.env.PROJECT_PATH}`);
+    }
     
+    console.log('✅ All components initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize components:', error);
+    process.exit(1);
+  }
+}
+
+// Маршрут для получения списка моделей
+app.get("/v1/models", async (req, res) => {
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
+  try {
+    const models = await providerFactory.listAllModels();
+    const response = {
+      object: "list",
+      data: models.map(m => ({
+        id: m.id,
+        object: "model",
+        created: Date.now(),
+        owned_by: m.provider || "unknown"
+      }))
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Failed to fetch models:", error);
     res.status(500).json({
-      error: {
-        message: "Failed to fetch models",
-        type: "invalid_request_error"
-      }
+      error: "Failed to fetch models",
+      details: error.message
     });
   }
 });
 
-/**
- * 2️⃣ Перехват chat/completions
- * Интеллектуальная маршрутизация с fallback, стримингом и логированием
- */
+// Маршрут для чата с использованием ProviderFactory
 app.post("/v1/chat/completions", async (req, res) => {
-  console.log(`🚀 Chat completion requested: ${req.ip}`);
-  
-  // Проверяем, не превышен ли бюджет
-  if (usageTracker.shouldDisableProxy()) {
-    const normalizedError = {
-      error: {
-        message: "Usage budget exceeded. Proxy temporarily disabled.",
-        type: "invalid_request_error"
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
+  const startTime = Date.now();
+  const { model, messages, stream, ...rest } = req.body;
+
+  // Prepare request for provider
+  const request = {
+    model: model,
+    messages: messages,
+    stream: stream || false,
+    ...rest
+  };
+
+  try {
+    // Use semantic cache if available
+    if (semanticCache && !stream) {
+      // Extract prompt from messages
+      const lastMessage = messages[messages.length - 1]?.content || '';
+      
+      // Get cached response or generate new one
+      const response = await semanticCache.getCachedOrGenerate(
+        lastMessage,
+        async () => {
+          // Generate new response using provider factory
+          const result = await providerFactory.complete(request);
+          return result;
+        }
+      );
+
+      // If we got a cached response, return it directly
+      if (response.similarity !== undefined) {
+        console.log(`🎯 Returning cached response with ${response.similarity * 100}% similarity`);
+        res.json(response);
+        return;
       }
+      
+      // If response was generated, send it normally
+      res.json(response);
+    } else {
+      // Direct call to provider factory without caching
+      if (stream) {
+        // For streaming, we need to handle the response differently
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+
+        try {
+          for await (const chunk of providerFactory.completeStream(request)) {
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+          }
+          res.write(`data: [DONE]\n\n`);
+        } catch (error) {
+          console.error("Streaming error:", error);
+          res.write(`data: {"error": "${error.message}"}\n\n`);
+        } finally {
+          res.end();
+        }
+      } else {
+        // Non-streaming response
+        const response = await providerFactory.complete(request);
+        res.json(response);
+      }
+    }
+
+    // Track usage after successful response
+    const duration = Date.now() - startTime;
+    usageTracker.trackRequest({
+      endpoint: '/v1/chat/completions',
+      model: model,
+      duration,
+      tokens: rest.max_tokens || 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Chat completion error:", error);
+    res.status(500).json({
+      error: "Chat completion failed",
+      details: error.message
+    });
+  }
+});
+
+// Маршрут для рекомендации модели
+app.get("/recommend-model/:taskType/:tokens", (req, res) => {
+  if (!providerFactory) {
+    return res.status(500).json({ error: "ProviderFactory not initialized" });
+  }
+
+  try {
+    const { taskType, tokens } = req.params;
+    const constraints = {
+      maxCost: parseFloat(req.query.maxCost) || undefined,
+      maxLatency: parseInt(req.query.maxLatency) || undefined
     };
-    
-    console.log(`🛑 Budget exceeded, request denied`);
-    res.status(429).json(normalizedError);
-    return;
-  }
-  
-  // Проверяем безопасность операции
-  if (!formalSafetyModel) {
-    formalSafetyModel = new FormalSafetyModel();
-  }
-  
-  const safetyCheck = formalSafetyModel.validateOperation({
-    type: 'llm_request',
-    payload: req.body
-  });
-  
-  if (!safetyCheck.safe) {
-    console.warn(`🚨 Safety violation in LLM request:`, safetyCheck.violations);
-    return res.status(400).json({
-      error: {
-        message: `Safety check failed: ${safetyCheck.violations.join(', ')}`,
-        type: "invalid_request_error"
-      }
+
+    const bestProvider = providerFactory.getBestProvider(taskType, parseInt(tokens), constraints);
+
+    if (!bestProvider) {
+      return res.status(404).json({
+        error: "No suitable provider found",
+        message: "No provider meets the specified constraints"
+      });
+    }
+
+    res.json({
+      recommendedModel: bestProvider.model,
+      provider: bestProvider.providerName,
+      score: bestProvider.score,
+      estimatedCost: bestProvider.provider.estimateCost({
+        messages: [{role: 'user', content: ''}],
+        maxTokens: parseInt(tokens)
+      }),
+      providerMetrics: providerFactory.getMetrics().providers[bestProvider.providerName]
+    });
+  } catch (error) {
+    console.error("Model recommendation error:", error);
+    res.status(500).json({
+      error: "Model recommendation failed",
+      details: error.message
     });
   }
-  
-  // Проверяем ограничения ресурсов
-  if (!resourceGovernor) {
-    resourceGovernor = new ResourceGovernor();
+});
+
+// Маршрут для проверки здоровья
+app.get("/health", (req, res) => {
+  const healthStatus = {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    providers: providerFactory ? providerFactory.getMetrics() : "not initialized",
+    components: {
+      apiServer: "operational",
+      usageTracker: "operational",
+      costOptimizer: "operational"
+    }
+  };
+
+  res.json(healthStatus);
+});
+
+/**
+ * Load routes from subdirectories
+ */
+async function loadRoutes() {
+  const routesDir = path.join(__dirname, 'routes');
+  const routeFiles = await fs.readdir(routesDir);
+
+  for (const file of routeFiles) {
+    if (file.endsWith('.js')) {
+      const routeModule = await import(path.join(routesDir, file));
+      const routePath = `/v1/${file.replace('.js', '')}`;
+      app.use(routePath, routeModule.default);
+      console.log(`📋 Loaded route: ${routePath}`);
+    }
   }
+}
+
+/**
+ * Start the server after initialization
+ */
+async function startServer() {
+  await initializeProviders();
+  await initializeComponents();
+  await loadRoutes();
   
-  const resourceCheck = resourceGovernor.checkResourceLimits({
-    type: 'llm_request',
-    tokens: estimatePromptTokens(req.body.messages || [])
+  app.listen(PORT, LISTEN_ADDRESS, () => {
+    console.log(`🚀 CEL v4.2.1 server running on http://${LISTEN_ADDRESS}:${PORT}`);
+    console.log(`📊 ProviderFactory ready with ${providerFactory ? providerFactory.getFallbackChain().length : 0} providers in chain`);
+    console.log(`🧠 Semantic cache initialized with ${semanticCache ? semanticCache.getStats().size : 0} entries`);
+    console.log(`🔍 RAG engine loaded ${ragEngine ? ragEngine.getStats().totalChunks : 0} chunks from ${ragEngine ? ragEngine.getStats().totalDocs : 0} documents`);
+    console.log(`🔒 Protected endpoints listening on ${LISTEN_ADDRESS}`);
   });
-  
-  if (!resourceCheck.allowed) {
-    console.warn(`📉 Resource limit exceeded:`, resourceCheck.reason);
-    return res.status(429).json({
-      error: {
-        message: `Resource limit exceeded: ${resourceCheck.reason}`,
-        type: "invalid_request_error"
-      }
-    });
-  }
-  
-  // Поддержка стриминга
-  const isStreaming = req.body.stream === true;
-  
-  // Устанавливаем заголовки для стриминга, если нужно
-  if (isStreaming) {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  } else {
-    res.setHeader('Content-Type', 'application/json');
-  }
+}
+
+// Запускаем сервер
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
+
+// Error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+export default app;
 
   let responseSent = false;
   const startTime = Date.now();

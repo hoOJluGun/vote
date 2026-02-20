@@ -1,4 +1,4 @@
-// new-index.js - Главный файл приложения для CEL v4.2.0
+// new-index.js - Главный файл приложения для CEL v4.2.1
 // Обновленная версия index.js с полной архитектурной реализацией
 
 import express from 'express';
@@ -6,7 +6,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'fileURLToPath';
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -26,6 +26,9 @@ import SelfHealingLayer from './lib/self-healing-layer.js';
 import ProjectKnowledgeGraph from './lib/project-knowledge-graph.js';
 import OrchestrationEngine from './lib/orchestration-engine.js';
 import CognitiveWorkspaceCore from './lib/cognitive-workspace-core.js';
+import { getProviderFactory } from './src/providers/provider-factory.js';
+import { getSemanticCache } from './src/engines/semantic-cache.js';
+import { getRAGEngine } from './src/engines/rag-engine.js';
 
 // Получение текущего пути для ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +58,56 @@ const knowledgeGraph = new ProjectKnowledgeGraph();
 const orchestrationEngine = new OrchestrationEngine();
 const cognitiveWorkspace = new CognitiveWorkspaceCore();
 
+// Инициализация новых компонентов
+let providerFactory = null;
+let semanticCache = null;
+let ragEngine = null;
+
+// Асинхронная инициализация новых компонентов
+async function initializeAdvancedComponents() {
+  try {
+    // Configure providers
+    const config = {
+      preferLocal: process.env.PREFER_LOCAL_MODELS !== 'false',
+      fallbackOrder: process.env.PROVIDER_FALLBACK_ORDER?.split(',') || [],
+      openrouter: {
+        baseUrl: process.env.OPENROUTER_BASE || 'https://openrouter.ai/api/v1',
+        // API key will be retrieved from SecretsManager automatically
+      },
+      ollama: process.env.OLLAMA_ENABLED === 'true' ? {
+        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      } : undefined,
+    };
+
+    providerFactory = await getProviderFactory(config);
+    semanticCache = await getSemanticCache({
+      maxSize: parseInt(process.env.SEMANTIC_CACHE_SIZE) || 1000,
+      ttl: parseInt(process.env.SEMANTIC_CACHE_TTL) || 24 * 60 * 60 * 1000, // 24 hours
+      similarityThreshold: parseFloat(process.env.SEMANTIC_SIMILARITY_THRESHOLD) || 0.85
+    });
+    
+    ragEngine = await getRAGEngine({
+      contextWindowSize: parseInt(process.env.CONTEXT_WINDOW_SIZE) || 3072,
+      chunkSize: parseInt(process.env.CHUNK_SIZE) || 512,
+      overlap: parseInt(process.env.OVERLAP) || 50,
+      topK: parseInt(process.env.TOP_K) || 5
+    });
+    
+    console.log('✅ ProviderFactory initialized');
+    console.log('✅ SemanticCache initialized');
+    console.log('✅ RAG Engine initialized');
+    
+    // Load project documents for RAG if project path is provided
+    if (process.env.PROJECT_PATH) {
+      await ragEngine.loadProjectDocuments(process.env.PROJECT_PATH);
+      console.log(`📚 Loaded project documents for RAG from ${process.env.PROJECT_PATH}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize advanced components:', error);
+    process.exit(1);
+  }
+}
+
 // Middleware для логирования запросов
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -80,7 +133,7 @@ app.use((req, res, next) => {
 // Middleware для проверки безопасности (глобально)
 app.use(async (req, res, next) => {
   // Пропускаем проверку безопасности для служебных маршрутов
-  if (req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
+  if (req.path.startsWith('/health') || req.path.startsWith('/metrics') || req.path.startsWith('/v1/safety')) {
     return next();
   }
   
@@ -88,7 +141,10 @@ app.use(async (req, res, next) => {
   const isSafe = safetyModel.checkOperationSafety(req.method + ' ' + req.path, {
     source: req.ip,
     headers: req.headers,
-    body: req.body
+    body: req.body,
+    params: req.params,
+    query: req.query,
+    sessionId: req.headers['x-session-id'] || req.headers['session-id']
   });
   
   if (!isSafe) {
@@ -112,6 +168,7 @@ app.use('/v1/safety', safetyRoutes); // Подключение маршруто�
 app.get('/health', (req, res) => {
   const healthCheck = {
     status: 'healthy',
+    version: '4.2.1',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
@@ -121,7 +178,9 @@ app.get('/health', (req, res) => {
       knowledge_graph: knowledgeGraph.isReady(),
       orchestration_engine: true,
       safety_model: true,
-      self_healing_layer: true
+      self_healing_layer: true,
+      semantic_cache: semanticCache ? semanticCache.getStats() : 'not initialized',
+      rag_engine: ragEngine ? ragEngine.getStats() : 'not initialized'
     }
   };
   
@@ -132,12 +191,14 @@ app.get('/health', (req, res) => {
 app.get('/v1/xcode/health', (req, res) => {
   res.json({
     status: 'connected',
-    version: 'v4.2.0',
+    version: 'v4.2.1',
     capabilities: [
       'intent_to_code',
       'multi_agent_orchestration',
       'formal_verification',
-      'self_healing'
+      'self_healing',
+      'semantic_caching',
+      'rag_optimization'
     ],
     safety_enabled: true
   });
@@ -187,19 +248,27 @@ process.on('SIGINT', () => {
   });
 });
 
-// Запуск сервера
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '127.0.0.1'; // Привязка только к localhost
-
-const server = app.listen(PORT, HOST, () => {
-  console.log(`CEL v4.2.0 server running on http://${HOST}:${PORT}`);
-  console.log(`Safety model initialized with ${safetyModel.safetyConstraints.length} constraints`);
-  console.log(`Trust boundaries established: ${[...safetyModel.trustBoundaries.keys()].join(', ')}`);
+// Асинхронная инициализация и запуск сервера
+let server;
+async function startServer() {
+  await initializeAdvancedComponents();
   
-  // Регистрация критических модулей для проверки целостности
-  safetyModel.registerCriticalModule('main-server', __filename);
-  safetyModel.registerCriticalModule('safety-model', './lib/formal-safety-model.js');
-  safetyModel.registerCriticalModule('router-safety', './routes/safety-routes.js');
+  // Запуск сервера
+  const PORT = process.env.PORT || 3000;
+  const HOST = process.env.HOST || '127.0.0.1'; // Привязка только к localhost
+
+  server = app.listen(PORT, HOST, () => {
+    console.log(`🚀 CEL v4.2.1 server running on http://${HOST}:${PORT}`);
+    console.log(`📊 ProviderFactory ready with ${providerFactory ? providerFactory.getFallbackChain().length : 0} providers in chain`);
+    console.log(`🧠 Semantic cache initialized with ${semanticCache ? semanticCache.getStats().size : 0} entries`);
+    console.log(`🔍 RAG engine loaded ${ragEngine ? ragEngine.getStats().totalChunks : 0} chunks from ${ragEngine ? ragEngine.getStats().totalDocs : 0} documents`);
+    console.log(`🔒 Protected endpoints listening on ${HOST}`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
 
 export default server;

@@ -196,4 +196,124 @@ router.post('/verify-token', (req, res) => {
   }
 });
 
+/**
+ * Эндпоинт регистрации нового инварианта безопасности
+ */
+router.post('/register-invariant', async (req, res) => {
+  try {
+    const { name, predicate, critical } = req.body;
+
+    if (!name || !predicate) {
+      return res.status(400).json({ 
+        error: 'Invariant name and predicate function are required' 
+      });
+    }
+
+    if (critical) {
+      safetyModel.registerCriticalInvariant(name, predicate);
+    } else {
+      safetyModel.registerInvariant(name, predicate);
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Invariant ${name} registered successfully`,
+      critical: !!critical
+    });
+
+  } catch (error) {
+    console.error('Invariant registration error:', error);
+    res.status(500).json({ 
+      error: 'Failed to register invariant',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Эндпоинт получения статуса инвариантов
+ */
+router.get('/invariants-status', async (req, res) => {
+  try {
+    const invariantsStatus = Array.from(safetyModel.invariants.entries()).map(([name, invariant]) => ({
+      name,
+      registeredAt: invariant.registeredAt,
+      verified: invariant.verified,
+      lastChecked: invariant.lastChecked,
+      violationCount: invariant.violationCount,
+      critical: invariant.critical
+    }));
+
+    res.json({ 
+      invariants: invariantsStatus,
+      total: invariantsStatus.length,
+      verified: invariantsStatus.filter(i => i.verified).length,
+      critical: invariantsStatus.filter(i => i.critical).length
+    });
+  } catch (error) {
+    console.error('Invariants status error:', error);
+    res.status(500).json({ 
+      error: 'Could not retrieve invariants status',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Эндпоинт принудительной проверки инвариантов
+ */
+router.post('/verify-invariants', async (req, res) => {
+  try {
+    const result = await safetyModel.verifyAllInvariants();
+    
+    res.json({ 
+      allVerified: result,
+      report: safetyModel.getSafetyReport()
+    });
+  } catch (error) {
+    console.error('Invariants verification error:', error);
+    res.status(500).json({ 
+      error: 'Invariants verification failed',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Эндпоинт добавления ограничения безопасности
+ */
+router.post('/add-constraint', async (req, res) => {
+  try {
+    const { name, appliesTo, condition, description } = req.body;
+
+    if (!name || !appliesTo || !condition) {
+      return res.status(400).json({ 
+        error: 'Constraint name, appliesTo and condition are required' 
+      });
+    }
+
+    // В реальном приложении condition должен быть проверен на безопасность
+    // прежде чем его можно будет использовать
+    safetyModel.addSafetyConstraint({
+      name,
+      appliesTo: Array.isArray(appliesTo) ? appliesTo : [appliesTo],
+      condition: new Function('context', condition), // Опасно! В продакшене нужна безопасная обработка
+      description: description || 'No description provided'
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Constraint ${name} added successfully`,
+      constraint: { name, appliesTo, description }
+    });
+
+  } catch (error) {
+    console.error('Constraint addition error:', error);
+    res.status(500).json({ 
+      error: 'Failed to add safety constraint',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;
