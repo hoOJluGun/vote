@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  bot:
+    build:
+      context: ./bot
+    image: tabletochki-bot:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BOT_BASE_URL=https://${BOT_DOMAIN}
+    expose:
+      - "8080"
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.rule=Host(`${BOT_DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls.certresolver=letsencrypt"
+      - "traefik.http.services.bot.loadbalancer.server.port=8080"
+
+networks:
+  proxy:
+    external: true
+}

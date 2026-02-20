@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --only=production
+
+COPY server.js enhanced-server.js ./
+COPY usage-tracker.js advanced-usage-tracker.js ./
+
+EXPOSE 3000
+
+CMD [ "node", "enhanced-server.js" ]

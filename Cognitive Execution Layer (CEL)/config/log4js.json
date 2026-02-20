@@ -1,0 +1,68 @@
+{
+  "appenders": {
+    "console": {
+      "type": "console",
+      "layout": {
+        "type": "coloured"
+      }
+    },
+    "file": {
+      "type": "dateFile",
+      "filename": "logs/application.log",
+      "pattern": "yyyy-MM-dd",
+      "keepFileExt": true,
+      "compress": true,
+      "daysToKeep": 30
+    },
+    "errorFile": {
+      "type": "dateFile",
+      "filename": "logs/errors.log",
+      "pattern": "yyyy-MM-dd",
+      "keepFileExt": true,
+      "compress": true,
+      "daysToKeep": 90
+    },
+    "auditFile": {
+      "type": "dateFile",
+      "filename": "logs/audit.log",
+      "pattern": "yyyy-MM-dd",
+      "keepFileExt": true,
+      "compress": true,
+      "daysToKeep": 365
+    },
+    "errors": {
+      "type": "logLevelFilter",
+      "level": "error",
+      "appender": "errorFile"
+    },
+    "audit": {
+      "type": "logLevelFilter",
+      "level": "info",
+      "appender": "auditFile"
+    }
+  },
+  "categories": {
+    "default": {
+      "appenders": ["console", "file"],
+      "level": "info"
+    },
+    "error": {
+      "appenders": ["console", "errors"],
+      "level": "error"
+    },
+    "audit": {
+      "appenders": ["audit"],
+      "level": "info"
+    },
+    "performance": {
+      "appenders": ["console", "file"],
+      "level": "debug"
+    },
+    "security": {
+      "appenders": ["console", "errors", "audit"],
+      "level": "warn"
+    }
+  },
+  "pm2": true,
+  "disableClustering": false
+}

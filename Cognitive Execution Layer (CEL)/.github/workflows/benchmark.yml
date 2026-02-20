@@ -1,0 +1,153 @@
+name: Reproducible Benchmark Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run entropy analysis benchmark
+      run: |
+        # Run a simple test to ensure the analysis tool works
+        node -e "
+        const { EntropyAnalysisTool } = require('./ENTROPY_ANALYSIS_TOOL.js');
+        const tool = new EntropyAnalysisTool({bootstrapSamples: 100}); // Smaller sample for CI
+        
+        // Generate sample entropy data
+        const entropyData = Array.from({length: 50}, (_, i) => ({
+          timestamp: Date.now() + i * 60000,
+          value: 0.2 + Math.sin(i/10)*0.05 + Math.random()*0.02
+        }));
+        
+        const analysis = tool.analyzeEntropyCurve(entropyData);
+        console.log('Entropy analysis completed:', analysis.basic);
+        console.log('Regression slope:', analysis.regression.slope);
+        console.log('P-value for slope:', analysis.regression.pValue);
+        "
+        
+    - name: Run cognitive workspace correlation test
+      run: |
+        node -e "
+        const { EntropyAnalysisTool } = require('./ENTROPY_ANALYSIS_TOOL.js');
+        const tool = new EntropyAnalysisTool();
+        
+        // Generate correlated sample data
+        const entropyValues = Array.from({length: 30}, () => Math.random() * 0.5 + 0.2);
+        const correctnessValues = entropyValues.map(e => 1 - e + (Math.random() * 0.1 - 0.05));
+        
+        const correlation = tool.calculateCorrelationMetrics(entropyValues, correctnessValues);
+        console.log('Correlation analysis:', correlation);
+        console.log('Pearson correlation:', correlation.pearson);
+        console.log('Significant correlation:', correlation.significant);
+        "
+        
+    - name: Run multiple runs analysis
+      run: |
+        node -e "
+        const { EntropyAnalysisTool } = require('./ENTROPY_ANALYSIS_TOOL.js');
+        const tool = new EntropyAnalysisTool({bootstrapSamples: 50}); // Smaller sample for CI
+        
+        // Generate multiple runs of entropy data
+        const runsData = Array.from({length: 5}, () => 
+          Array.from({length: 20}, (_, i) => ({
+            timestamp: Date.now() + i * 60000,
+            value: 0.2 + Math.sin(i/5)*0.05 + Math.random()*0.02
+          }))
+        );
+        
+        const consistency = tool.analyzeMultipleRuns(runsData);
+        console.log('Multiple runs analysis completed');
+        console.log('Mean slope across runs:', consistency.aggregate.meanSlope);
+        console.log('Std of slopes:', consistency.aggregate.stdSlope);
+        console.log('Consistency coefficient:', consistency.aggregate.consistencyCoefficient);
+        "
+        
+    - name: Run comparative analysis
+      run: |
+        node -e "
+        const { EntropyAnalysisTool } = require('./ENTROPY_ANALYSIS_TOOL.js');
+        const tool = new EntropyAnalysisTool();
+        
+        // Generate two different datasets
+        const dataset1 = Array.from({length: 30}, (_, i) => ({
+          timestamp: Date.now() + i * 60000,
+          value: 0.2 + Math.random() * 0.1
+        }));
+        
+        const dataset2 = Array.from({length: 30}, (_, i) => ({
+          timestamp: Date.now() + i * 60000,
+          value: 0.3 + Math.random() * 0.1
+        }));
+        
+        const comparison = tool.comparativeAnalysis(dataset1, dataset2);
+        console.log('Comparative analysis completed');
+        console.log('T-test significant difference:', comparison.tTest.significant);
+        console.log('Effect size (Cohen\'s d):', comparison.effectSize);
+        console.log('Pearson correlation:', comparison.correlation);
+        "
+        
+    - name: Run formal resilience test
+      run: |
+        node -e "
+        const { FormalResilienceModel } = require('./formal-resilience-model.js');
+        const model = new FormalResilienceModel();
+        
+        // Create a sample initial state for the proof
+        const initialState = {
+          resourceUsage: { cpu: 25, memory: 40, tokens: 5000 },
+          limits: { cpu: 80, memory: 80, tokens: 10000 },
+          operations: [{ safetyCheckPassed: true }],
+          executionResults: [{ deterministicVerificationPassed: true }],
+          currentGoalId: 'sample-goal-1',
+          initialGoalId: 'sample-goal-1',
+          systemComponents: [{ signatureValid: true }],
+          entropy: { current: 0.3, threshold: 0.7 }
+        };
+        
+        console.log('Starting formal resilience proof...');
+        model.proveStability(initialState)
+          .then(result => {
+            console.log('Formal proof completed:', result.proofValid);
+            console.log('All invariants satisfied:', result.allInvariantsSatisfied);
+          })
+          .catch(err => {
+            console.error('Formal proof failed:', err);
+            process.exit(1);
+          });
+        "
+        
+    - name: Build Docker image
+      run: |
+        docker build -t llm-control-plane:benchmark .
+        echo "Docker image built successfully"
+        
+    - name: Run Docker container briefly to test
+      run: |
+        docker run -d --name benchmark-test -p 3000:3000 llm-control-plane:benchmark
+        sleep 10
+        if docker ps | grep benchmark-test; then
+          echo "Container is running"
+          docker kill benchmark-test
+        else
+          echo "Container failed to start"
+          exit 1
+        fi

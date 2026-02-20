@@ -1,0 +1,54 @@
+{
+  "name": "cognitive-execution-cli",
+  "version": "2.0.0",
+  "description": "Cognitive Execution Layer Command Line Interface - Enhanced TypeScript Version",
+  "type": "module",
+  "bin": {
+    "cel": "./dist/index.js"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "postbuild": "chmod +x dist/index.js && echo '{\"type\":\"module\",\"name\":\"cognitive-execution-cli-dist\",\"version\":\"2.0.0\"}' > dist/package.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest src/__tests__/unit",
+    "test:integration": "jest src/__tests__/integration"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "gradient-string": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "ora": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "development",
+    "code-generation",
+    "refactoring",
+    "testing",
+    "typescript"
+  ],
+  "author": "CEL Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

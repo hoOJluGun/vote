@@ -1,0 +1,23 @@
+{
+  "monitoring": {
+    "metrics": {
+      "api_response_time": {
+        "threshold": 5000,
+        "alert": true
+      },
+      "model_latency": {
+        "threshold": 3000,
+        "alert": true
+      },
+      "error_rate": {
+        "threshold": 5,
+        "alert": true
+      }
+    },
+    "performance_tests": {
+      "concurrent_users": 100,
+      "test_duration": 300,
+      "expected_throughput": 50
+    }
+  }
+}

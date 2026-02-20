@@ -1,0 +1,97 @@
+name: Release & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  determine-deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy-type: ${{ steps.check.outputs.deploy-type }}
+    steps:
+      - id: check
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "deploy-type=production" >> $GITHUB_OUTPUT
+          else
+            echo "deploy-type=staging" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Build project
+        run: npm run build
+
+  deploy-staging:
+    needs: [determine-deployment, build-and-test]
+    if: ${{ needs.determine-deployment.outputs.deploy-type == 'staging' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add staging deployment commands here
+          echo "Staging deployment completed"
+          
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests on staging..."
+          # Add smoke test commands here
+          
+      - name: Notify deployment
+        run: |
+          echo "Staging deployment notification sent"
+
+  deploy-production:
+    needs: [determine-deployment, build-and-test, deploy-staging]
+    if: ${{ needs.determine-deployment.outputs.deploy-type == 'production' }}
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment..."
+          # Add production deployment commands here
+          echo "Production deployment completed"
+          
+      - name: Run production tests
+        run: |
+          echo "Running production validation tests..."
+          # Add production validation commands here
+          
+      - name: Notify deployment
+        run: |
+          echo "Production deployment notification sent"

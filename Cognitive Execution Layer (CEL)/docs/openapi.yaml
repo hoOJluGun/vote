@@ -1,0 +1,475 @@
+openapi: 3.0.3
+info:
+  title: Cognitive Execution Layer (CEL) API
+  description: |
+    Advanced AI-powered development platform with multi-model support.
+    
+    ## Key Features
+    - **Multi-AI Model Routing**: Seamlessly switch between different AI models
+    - **Project Context Awareness**: Maintains conversation history and project context
+    - **Code Generation & Refactoring**: Intelligent code assistance
+    - **Automated Testing**: Generate and run comprehensive test suites
+    - **Smart Git Integration**: AI-powered commit message generation
+    
+    ## Authentication
+    No authentication required for local development. For production deployments,
+    API keys can be configured through environment variables.
+    
+    ## Rate Limits
+    - Local development: Unlimited requests
+    - Production: Configurable based on deployment settings
+    
+    ## Supported Models
+    - OpenRouter models (DeepSeek, Mistral, etc.)
+    - Custom model integrations
+    - Model fallback chains for reliability
+  version: 2.0.0
+  contact:
+    name: CEL Development Team
+    email: dev@cognitive-execution-layer.ai
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.cel-platform.com/v1
+    description: Production API endpoint
+
+tags:
+  - name: chat
+    description: Interactive AI chat with project context
+  - name: code
+    description: Code generation, refactoring, and analysis
+  - name: testing
+    description: Automated test generation and execution
+  - name: git
+    description: Git integration and commit assistance
+  - name: health
+    description: System health and status monitoring
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Check system health
+      description: Returns the current status of the CEL system including model availability and resource usage.
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: System is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/chat/completions:
+    post:
+      tags: [chat]
+      summary: AI chat completion
+      description: |
+        Engage in conversational AI interactions with project context awareness.
+        Maintains conversation history and can reference previous interactions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Successful chat response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/code/generate:
+    post:
+      tags: [code]
+      summary: Generate code from description
+      description: Generate code based on natural language descriptions with optional context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeGenerationRequest'
+      responses:
+        '200':
+          description: Code generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeGenerationResponse'
+        '400':
+          description: Invalid request
+        '500':
+          description: Generation failed
+
+  /v1/code/refactor:
+    post:
+      tags: [code]
+      summary: Refactor existing code
+      description: Improve code quality, readability, and performance of existing code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeRefactorRequest'
+      responses:
+        '200':
+          description: Code refactored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeRefactorResponse'
+        '400':
+          description: Invalid request
+        '500':
+          description: Refactoring failed
+
+  /v1/testing/generate:
+    post:
+      tags: [testing]
+      summary: Generate automated tests
+      description: Automatically generate comprehensive test suites for your code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestGenerationRequest'
+      responses:
+        '200':
+          description: Tests generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestGenerationResponse'
+        '400':
+          description: Invalid request
+        '500':
+          description: Test generation failed
+
+  /v1/git/analyze:
+    post:
+      tags: [git]
+      summary: Analyze Git changes
+      description: Analyze staged Git changes and generate smart commit messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitAnalysisRequest'
+      responses:
+        '200':
+          description: Git analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitAnalysisResponse'
+        '400':
+          description: Invalid request or not a Git repository
+        '500':
+          description: Analysis failed
+
+components:
+  schemas:
+    Message:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+          description: Role of the message sender
+        content:
+          type: string
+          description: Content of the message
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message was sent
+
+    ChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          description: Array of messages in the conversation
+        model:
+          type: string
+          description: AI model to use (defaults to configured default)
+          example: "openrouter/deepseek/deepseek-chat"
+        max_tokens:
+          type: integer
+          description: Maximum tokens in response
+          default: 2048
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature
+          default: 0.7
+        project_context:
+          type: object
+          description: Optional project context information
+          properties:
+            project_name:
+              type: string
+            file_structure:
+              type: array
+              items:
+                type: string
+            recent_changes:
+              type: array
+              items:
+                type: string
+
+    ChatResponse:
+      type: object
+      required: [choices]
+      properties:
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                $ref: '#/components/schemas/Message'
+              finish_reason:
+                type: string
+        usage:
+          type: object
+          properties:
+            prompt_tokens:
+              type: integer
+            completion_tokens:
+              type: integer
+            total_tokens:
+              type: integer
+
+    CodeGenerationRequest:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          description: Natural language description of what to generate
+        language:
+          type: string
+          description: Target programming language
+          default: "typescript"
+        context:
+          type: string
+          description: Additional context or requirements
+        template:
+          type: string
+          description: Code template to use as starting point
+
+    CodeGenerationResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Generated code
+        language:
+          type: string
+          description: Language of generated code
+        explanation:
+          type: string
+          description: Explanation of the generated code
+
+    CodeRefactorRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: Code to refactor
+        target_improvements:
+          type: string
+          description: Specific improvements desired
+        language:
+          type: string
+          description: Programming language of the code
+
+    CodeRefactorResponse:
+      type: object
+      properties:
+        original_code:
+          type: string
+        refactored_code:
+          type: string
+        improvements:
+          type: array
+          items:
+            type: string
+        explanation:
+          type: string
+
+    TestGenerationRequest:
+      type: object
+      required: [code, filename]
+      properties:
+        code:
+          type: string
+          description: Source code to test
+        filename:
+          type: string
+          description: Name of the source file
+        framework:
+          type: string
+          description: Testing framework to use
+          default: "jest"
+        coverage_target:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Target code coverage percentage
+          default: 80
+
+    TestGenerationResponse:
+      type: object
+      properties:
+        tests:
+          type: string
+          description: Generated test code
+        test_count:
+          type: integer
+          description: Number of tests generated
+        coverage_estimate:
+          type: integer
+          description: Estimated code coverage
+        framework:
+          type: string
+          description: Testing framework used
+
+    GitChange:
+      type: object
+      properties:
+        file:
+          type: string
+        status:
+          type: string
+          enum: [A, M, D, R]
+        additions:
+          type: integer
+        deletions:
+          type: integer
+
+    GitAnalysisRequest:
+      type: object
+      properties:
+        include_stats:
+          type: boolean
+          description: Include change statistics
+          default: true
+        conventional_format:
+          type: boolean
+          description: Use conventional commit format
+          default: true
+
+    GitAnalysisResponse:
+      type: object
+      properties:
+        commit_message:
+          type: string
+        commit_type:
+          type: string
+          enum: [feat, fix, docs, style, refactor, test, chore, perf, build, ci]
+        scope:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GitChange'
+        stats:
+          type: object
+          properties:
+            files_changed:
+              type: integer
+            insertions:
+              type: integer
+            deletions:
+              type: integer
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: number
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+                enum: [available, unavailable, degraded]
+              latency:
+                type: number
+        system:
+          type: object
+          properties:
+            cpu_usage:
+              type: number
+            memory_usage:
+              type: number
+            disk_usage:
+              type: number
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
+
+externalDocs:
+  description: Find out more about CEL
+  url: https://docs.cognitive-execution-layer.ai

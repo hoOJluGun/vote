@@ -1,0 +1,16 @@
+node_modules/
+.env
+npm-debug.log*
+logs/
+*.log
+.DS_Store
+coverage/
+dist/
+build/
+*.js~*
+server.js
+enhanced-server.js
+production-server.js
+ENHANCED-README.md
+PRODUCTION-README.md
+requests-log.json

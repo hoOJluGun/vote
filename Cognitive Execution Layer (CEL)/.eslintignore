@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Python stats engine
+stats_engine/
+
+# Xcode workspace
+cel.xcworkspace/
+
+# Backup files
+*.bak
+*.backup
+
+# Generated files
+docs/api/
+reports/
+
+# Test fixtures
+test/fixtures/
+tests/fixtures/
+
+# Legacy files (to be removed)
+*.legacy.js

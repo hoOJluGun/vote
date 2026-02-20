@@ -1,0 +1,42 @@
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      # SAST scanning with CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+        
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        
+      # Dependency scanning
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        
+      # npm audit for security vulnerabilities
+      - name: Run npm audit
+        run: npm audit --audit-level high
+        
+      # Secret scanning with Gitleaks
+      - name: Secret Scanning with Gitleaks
+        uses: gacts/gitleaks@v1
+        with:
+          args: --verbose

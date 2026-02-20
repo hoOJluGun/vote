@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind CSS Test</title>
+    <link href="./index.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-primary mb-4">Tailwind CSS Test</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Test buttons -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4">Buttons</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button class="btn-primary">Primary</button>
+                    <button class="btn-secondary">Secondary</button>
+                    <button class="btn-outline">Outline</button>
+                </div>
+            </div>
+            
+            <!-- Test badges -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4">Badges</h2>
+                <div class="flex flex-wrap gap-2">
+                    <span class="badge-default">Default</span>
+                    <span class="badge-secondary">Secondary</span>
+                    <span class="badge-destructive">Destructive</span>
+                </div>
+            </div>
+            
+            <!-- Test gradients -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4">Gradients</h2>
+                <div class="space-y-2">
+                    <div class="p-3 rounded bg-gradient-cel text-white">CEL Gradient</div>
+                    <div class="p-3 rounded bg-gradient-ai text-white">AI Gradient</div>
+                    <div class="p-3 rounded bg-gradient-matrix text-white">Matrix Gradient</div>
+                </div>
+            </div>
+            
+            <!-- Test animations -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4">Animations</h2>
+                <div class="space-y-2">
+                    <div class="w-16 h-16 bg-primary rounded-lg animate-float"></div>
+                    <div class="w-16 h-16 bg-secondary rounded-lg animate-pulse"></div>
+                    <div class="w-16 h-16 bg-destructive rounded-lg animate-bounce"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

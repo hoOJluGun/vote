@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  xcode-openrouter-proxy:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_BASE=${OPENROUTER_BASE}
+    volumes:
+      - ./.env:/app/.env:ro

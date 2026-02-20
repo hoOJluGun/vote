@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Control Plane - Xcode Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #1e293b;
+            --card-bg: #f8fafc;
+            --text-dark: #1e293b;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-operational {
+            background-color: var(--success-color);
+        }
+        
+        .status-warning {
+            background-color: var(--warning-color);
+        }
+        
+        .status-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        
+        .metric {
+            margin: 15px 0;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        .progress-container {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+        }
+        
+        .component-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .component-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .component-name {
+            font-weight: 500;
+        }
+        
+        .activity-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .activity-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .activity-time {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: var(--border-radius);
+        }
+        
+        .chart-bar {
+            flex: 1;
+            background-color: var(--primary-color);
+            min-width: 20px;
+            position: relative;
+        }
+        
+        .chart-bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .chart-bar-value {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <span class="status-indicator status-operational"></span>
+                LLM Control Plane v4.2 - Xcode Dashboard
+            </h1>
+            <div>Last Updated: <span id="lastUpdated">--:--:--</span></div>
+        </header>
+        
+        <div class="grid">
+            <!-- System Health Card -->
+            <div class="card">
+                <h2>System Health</h2>
+                <div class="metric">
+                    <div class="metric-label">Status</div>
+                    <div class="metric-value">
+                        <span class="status-indicator status-operational"></span>
+                        Operational
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Global System Health Index (GSHI)</div>
+                    <div class="metric-value" id="gshiValue">0.85</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 85%;"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Uptime</div>
+                    <div class="metric-value" id="uptimeValue">0 days, 00:00:00</div>
+                </div>
+            </div>
+            
+            <!-- Performance Metrics Card -->
+            <div class="card">
+                <h2>Performance Metrics</h2>
+                <div class="metric">
+                    <div class="metric-label">System Entropy</div>
+                    <div class="metric-value" id="entropyValue">0.23</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 23%; background-color: var(--success-color);"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">System Stability</div>
+                    <div class="metric-value" id="stabilityValue">0.94</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 94%; background-color: var(--success-color);"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Resource Utilization</div>
+                    <div class="metric-value" id="resourceValue">CPU: 25%, Mem: 40%</div>
+                </div>
+            </div>
+            
+            <!-- Cognitive Workspace Card -->
+            <div class="card">
+                <h2>Cognitive Workspace</h2>
+                <div class="metric">
+                    <div class="metric-label">Current Task</div>
+                    <div class="metric-value" id="currentTask">Optimizing performance</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Optimizations Today</div>
+                    <div class="metric-value" id="optimizationCount">24</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Avg. Stability Score</div>
+                    <div class="metric-value" id="avgStability">0.87</div>
+                </div>
+            </div>
+            
+            <!-- Component Status Card -->
+            <div class="card">
+                <h2>Component Status</h2>
+                <ul class="component-list" id="componentList">
+                    <li class="component-item">
+                        <span class="component-name">API Gateway</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                    <li class="component-item">
+                        <span class="component-name">Knowledge Graph</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                    <li class="component-item">
+                        <span class="component-name">Safety Model</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                    <li class="component-item">
+                        <span class="component-name">Resource Governor</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                    <li class="component-item">
+                        <span class="component-name">Integrity Checker</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                    <li class="component-item">
+                        <span class="component-name">Stats Engine</span>
+                        <span class="status-indicator status-operational"></span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Recent Activity Card -->
+            <div class="card">
+                <h2>Recent Activity</h2>
+                <ul class="activity-list" id="activityList">
+                    <li class="activity-item">
+                        <div>Completed cognitive workspace optimization</div>
+                        <div class="activity-time">2 min ago</div>
+                    </li>
+                    <li class="activity-item">
+                        <div>Applied performance improvement patch</div>
+                        <div class="activity-time">15 min ago</div>
+                    </li>
+                    <li class="activity-item">
+                        <div>Analyzed project structure for refactoring</div>
+                        <div class="activity-time">30 min ago</div>
+                    </li>
+                    <li class="activity-item">
+                        <div>Executed autonomous testing suite</div>
+                        <div class="activity-time">1 hour ago</div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Stats Engine Card -->
+            <div class="card">
+                <h2>Statistical Analysis</h2>
+                <div class="metric">
+                    <div class="metric-label">Bayesian Evidence Strength</div>
+                    <div class="metric-value" id="bayesEvidence">Moderate</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Effect Size (Cohen's d)</div>
+                    <div class="metric-value" id="effectSize">0.72</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Statistical Power</div>
+                    <div class="metric-value" id="statPower">0.84</div>
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="runBayesianTest()">Run Bayesian Analysis</button>
+                    <button onclick="runPowerAnalysis()">Calculate Power</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Entropy Trend Visualization</h2>
+            <div class="chart-container" id="entropyChart">
+                <!-- Bars will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="refreshDashboard()">Refresh Dashboard</button>
+            <button onclick="runStressTest()">Start Stress Test</button>
+            <button onclick="generateReport()">Generate Report</button>
+        </div>
+        
+        <footer>
+            LLM Control Plane v4.2 | Scientifically Validated Statistical Engine | Cognitive Workspace Optimization
+        </footer>
+    </div>
+
+    <script>
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = 
+                now.toLocaleTimeString();
+        }
+        
+        // Populate entropy chart
+        function populateEntropyChart() {
+            const container = document.getElementById('entropyChart');
+            container.innerHTML = '';
+            
+            // Generate sample data for entropy over time
+            const entropyValues = [0.15, 0.22, 0.18, 0.25, 0.19, 0.23, 0.21, 0.24, 0.20, 0.23];
+            
+            entropyValues.forEach((value, index) => {
+                const barHeight = value * 300; // Scale to 300px max
+                
+                const barDiv = document.createElement('div');
+                barDiv.className = 'chart-bar';
+                barDiv.style.height = `${barHeight}px`;
+                barDiv.style.backgroundColor = value > 0.22 ? 'var(--warning-color)' : 'var(--success-color)';
+                
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'chart-bar-label';
+                labelDiv.textContent = `T-${9-index}`;
+                
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'chart-bar-value';
+                valueDiv.textContent = value.toFixed(2);
+                
+                barDiv.appendChild(labelDiv);
+                barDiv.appendChild(valueDiv);
+                
+                container.appendChild(barDiv);
+            });
+        }
+        
+        // Refresh dashboard data
+        async function refreshDashboard() {
+            try {
+                const response = await fetch('/v1/xcode/dashboard');
+                const data = await response.json();
+                
+                // Update metrics
+                document.getElementById('gshiValue').textContent = 
+                    data.systemHealth.gshi.toFixed(2);
+                
+                document.getElementById('entropyValue').textContent = 
+                    data.performanceMetrics.entropy.toFixed(2);
+                
+                document.getElementById('stabilityValue').textContent = 
+                    data.performanceMetrics.stability.toFixed(2);
+                
+                document.getElementById('resourceValue').textContent = 
+                    `CPU: ${data.performanceMetrics.resourceUsage.cpu || 0}%, Mem: ${data.performanceMetrics.resourceUsage.memory || 0}%`;
+                
+                document.getElementById('currentTask').textContent = 
+                    data.cognitiveWorkspace.currentTask;
+                
+                document.getElementById('optimizationCount').textContent = 
+                    data.cognitiveWorkspace.optimizationCount;
+                
+                document.getElementById('avgStability').textContent = 
+                    data.cognitiveWorkspace.averageStabilityScore.toFixed(2);
+                
+                // Update component status
+                updateComponentStatus(data.componentStatus);
+                
+                // Update activity list
+                updateActivityList(data.recentActivity);
+                
+                // Update timestamp
+                updateTimestamp();
+                
+                // Update chart
+                populateEntropyChart();
+                
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+                alert('Failed to refresh dashboard data');
+            }
+        }
+        
+        // Update component status indicators
+        function updateComponentStatus(statuses) {
+            const list = document.getElementById('componentList');
+            list.innerHTML = '';
+            
+            for (const [name, status] of Object.entries(statuses)) {
+                const item = document.createElement('li');
+                item.className = 'component-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'component-name';
+                nameSpan.textContent = name;
+                
+                const statusIndicator = document.createElement('span');
+                statusIndicator.className = 'status-indicator';
+                
+                if (status === 'operational') {
+                    statusIndicator.classList.add('status-operational');
+                } else if (status === 'degraded') {
+                    statusIndicator.classList.add('status-warning');
+                } else {
+                    statusIndicator.classList.add('status-danger');
+                }
+                
+                item.appendChild(nameSpan);
+                item.appendChild(statusIndicator);
+                
+                list.appendChild(item);
+            }
+        }
+        
+        // Update activity list
+        function updateActivityList(activity) {
+            const list = document.getElementById('activityList');
+            list.innerHTML = '';
+            
+            // Add some sample activities
+            const activities = [
+                { text: "Completed cognitive workspace optimization", time: "Just now" },
+                { text: "Applied performance improvement patch", time: "2 min ago" },
+                { text: "Analyzed project structure for refactoring", time: "15 min ago" },
+                { text: "Executed autonomous testing suite", time: "30 min ago" },
+                { text: "Verified system integrity and safety constraints", time: "1 hour ago" }
+            ];
+            
+            activities.forEach(activity => {
+                const item = document.createElement('li');
+                item.className = 'activity-item';
+                
+                const textDiv = document.createElement('div');
+                textDiv.textContent = activity.text;
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'activity-time';
+                timeDiv.textContent = activity.time;
+                
+                item.appendChild(textDiv);
+                item.appendChild(timeDiv);
+                
+                list.appendChild(item);
+            });
+        }
+        
+        // Placeholder functions for buttons
+        function runBayesianTest() {
+            alert('Running Bayesian analysis...');
+        }
+        
+        function runPowerAnalysis() {
+            alert('Calculating statistical power...');
+        }
+        
+        function runStressTest() {
+            alert('Starting 72-hour stress test...');
+        }
+        
+        function generateReport() {
+            alert('Generating comprehensive system report...');
+        }
+        
+        // Initial load
+        updateTimestamp();
+        populateEntropyChart();
+        refreshDashboard();
+        
+        // Refresh every 30 seconds
+        setInterval(refreshDashboard, 30000);
+    </script>
+</body>
+</html>

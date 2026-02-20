@@ -1,0 +1,71 @@
+# EditorConfig - https://editorconfig.org
+# Унификация стиля кодирования между редакторами и IDE
+
+# Верхний-level файл
+root = true
+
+# Для всех файлов
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# JavaScript файлы
+[*.js]
+indent_size = 2
+max_line_length = 100
+
+# TypeScript файлы
+[*.ts]
+indent_size = 2
+
+# JSON файлы
+[*.json]
+indent_size = 2
+
+# YAML файлы
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown файлы
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Python файлы
+[*.py]
+indent_size = 4
+
+# Makefile
+[Makefile]
+indent_style = tab
+
+# Shell скрипты
+[*.sh]
+indent_size = 2
+
+# Dockerfile
+[Dockerfile]
+indent_size = 2
+
+# Конфигурационные файлы
+[.editorconfig]
+indent_size = 2
+
+# Package files
+[package.json]
+indent_size = 2
+
+# Git ignore
+[.gitignore]
+indent_size = 2
+
+# ESLint и Prettier
+[.eslintrc.*]
+indent_size = 2
+
+[.prettierrc.*]
+indent_size = 2

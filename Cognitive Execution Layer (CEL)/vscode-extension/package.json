@@ -1,0 +1,168 @@
+{
+  "name": "cel-vscode",
+  "displayName": "Cognitive Execution Layer",
+  "description": "AI-powered development assistant with project context awareness",
+  "version": "1.0.0",
+  "publisher": "cel-team",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cel.chat",
+        "title": "CEL: Open AI Chat",
+        "category": "CEL"
+      },
+      {
+        "command": "cel.refactor",
+        "title": "CEL: Refactor Selection",
+        "category": "CEL"
+      },
+      {
+        "command": "cel.explain",
+        "title": "CEL: Explain Code",
+        "category": "CEL"
+      },
+      {
+        "command": "cel.generateTests",
+        "title": "CEL: Generate Tests",
+        "category": "CEL"
+      },
+      {
+        "command": "cel.optimize",
+        "title": "CEL: Optimize Code",
+        "category": "CEL"
+      },
+      {
+        "command": "cel.review",
+        "title": "CEL: Code Review",
+        "category": "CEL"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cel-sidebar",
+          "title": "Cognitive Execution Layer",
+          "icon": "$(hubot)"
+        }
+      ]
+    },
+    "views": {
+      "cel-sidebar": [
+        {
+          "id": "cel-chat-view",
+          "name": "AI Chat",
+          "type": "webview"
+        },
+        {
+          "id": "cel-project-view",
+          "name": "Project Context",
+          "type": "tree"
+        },
+        {
+          "id": "cel-performance-view",
+          "name": "Performance Metrics",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "cel.refactor",
+          "when": "editorHasSelection",
+          "group": "cel-group@1"
+        },
+        {
+          "command": "cel.explain",
+          "when": "editorTextFocus",
+          "group": "cel-group@2"
+        },
+        {
+          "command": "cel.generateTests",
+          "when": "editorTextFocus",
+          "group": "cel-group@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cel.review",
+          "when": "explorerResourceIsFile",
+          "group": "cel-explorer@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Cognitive Execution Layer",
+      "properties": {
+        "cel.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenRouter API Key for CEL"
+        },
+        "cel.defaultModel": {
+          "type": "string",
+          "default": "upstage/solar-pro-3:free",
+          "description": "Default AI model to use",
+          "enum": [
+            "upstage/solar-pro-3:free",
+            "z-ai/glm-4.5-air:free",
+            "qwen/qwen3-coder:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemma-3-27b-it:free"
+          ]
+        },
+        "cel.enableAutoCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI-powered auto-completion"
+        },
+        "cel.showPerformanceMetrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show performance metrics in status bar"
+        },
+        "cel.projectContextDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Depth of project context analysis"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "eslint": "^8.49.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.2.2",
+    "@vscode/test-electron": "^2.3.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

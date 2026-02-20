@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Control Plane Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .controls-panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .control-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .control-group select, .control-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            text-align: center;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+        .card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .models-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .model-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .model-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        .health-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .healthy { background-color: #2ecc71; }
+        .unhealthy { background-color: #e74c3c; }
+        .warning { background-color: #f39c12; }
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .stat {
+            text-align: center;
+            padding: 10px;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-wrapper {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            position: relative;
+        }
+        .requests-history {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #7f8c8d;
+        }
+        .refresh-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            margin-right: 10px;
+        }
+        .refresh-btn:hover {
+            background-color: #2980b9;
+        }
+        .export-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        .export-btn:hover {
+            background-color: #27ae60;
+        }
+        .fallback-chain {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .chain-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .chain-index {
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .distribution-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-title {
+            margin-top: 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+        .fallback-stats {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .drilldown-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .close-modal {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LLM Control Plane Dashboard</h1>
+            <p>Real-time monitoring of models, usage, and performance metrics</p>
+            <button class="refresh-btn" onclick="refreshData()">Refresh Data</button>
+            <button class="export-btn" onclick="exportData()">Export Data</button>
+        </header>
+        
+        <div class="controls-panel">
+            <div class="control-group">
+                <label for="timeRange">Time Range:</label>
+                <select id="timeRange" onchange="applyFilters()">
+                    <option value="1h">Last Hour</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="24h" selected>Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="modelFilter">Filter by Model:</label>
+                <select id="modelFilter" onchange="applyFilters()">
+                    <option value="all" selected>All Models</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="taskTypeFilter">Filter by Task Type:</label>
+                <select id="taskTypeFilter" onchange="applyFilters()">
+                    <option value="all" selected>All Types</option>
+                    <option value="refactoring">Refactoring</option>
+                    <option value="commenting">Commenting</option>
+                    <option value="generation">Generation</option>
+                    <option value="explanation">Explanation</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="sortBy">Sort By:</label>
+                <select id="sortBy" onchange="applyFilters()">
+                    <option value="success_rate" selected>Success Rate</option>
+                    <option value="latency">Latency</option>
+                    <option value="tokens">Tokens Used</option>
+                    <option value="requests">Number of Requests</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="status-overview">
+            <div class="card">
+                <h3>Total Requests</h3>
+                <div class="value" id="totalRequests">-</div>
+            </div>
+            <div class="card">
+                <h3>Current Tokens Used</h3>
+                <div class="value" id="currentTokens">-</div>
+            </div>
+            <div class="card">
+                <h3>Budget Limit</h3>
+                <div class="value" id="budgetLimit">-</div>
+            </div>
+            <div class="card">
+                <h3>Budget Status</h3>
+                <div class="value" id="budgetStatus">-</div>
+            </div>
+        </div>
+        
+        <div class="fallback-stats">
+            <h2>Fallback Statistics</h2>
+            <div class="status-overview">
+                <div class="card">
+                    <h3>Total Fallback Attempts</h3>
+                    <div class="value" id="fallbackAttempts">-</div>
+                </div>
+                <div class="card">
+                    <h3>Fallback Success Rate</h3>
+                    <div class="value" id="fallbackSuccessRate">-</div>
+                </div>
+                <div class="card">
+                    <h3>Last Fallback</h3>
+                    <div class="value" id="lastFallback">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fallback-chain">
+            <h2>Fallback Chain</h2>
+            <div id="fallbackList">
+                <!-- Fallback chain items will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="models-status">
+            <!-- Model cards will be inserted here -->
+        </div>
+        
+        <div class="distribution-charts">
+            <div class="chart-wrapper">
+                <h3 class="chart-title">Token Distribution by Model</h3>
+                <canvas id="tokenDistributionChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3 class="chart-title">Request Success Rate by Model</h3>
+                <canvas id="successRateChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <h3 class="chart-title">Average Latency by Model (ms)</h3>
+                <canvas id="latencyChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3 class="chart-title">Fallback Usage Over Time</h3>
+                <canvas id="fallbackUsageChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="requests-history">
+            <h2>Recent Requests</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Model</th>
+                        <th>Tokens In/Out</th>
+                        <th>Cost</th>
+                        <th>Latency (ms)</th>
+                        <th>Status</th>
+                        <th>Task Type</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                    <!-- Table rows will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="drilldownModal" class="drilldown-modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeDrilldownModal()">&times;</span>
+                <h2>Detailed Metrics</h2>
+                <div id="drilldownContent">
+                    <!-- Detailed metrics will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart instances
+        let tokenDistributionChart, successRateChart, latencyChart, fallbackUsageChart;
+        let fullData = null;
+        
+        // Initialize charts
+        function initCharts() {
+            const tokenCtx = document.getElementById('tokenDistributionChart').getContext('2d');
+            tokenDistributionChart = new Chart(tokenCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} tokens (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const successCtx = document.getElementById('successRateChart').getContext('2d');
+            successRateChart = new Chart(successCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Success Rate (%)',
+                        data: [],
+                        backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}%`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const modelIndex = elements[0].index;
+                            const modelName = successRateChart.data.labels[modelIndex];
+                            showDrilldownDetails(modelName);
+                        }
+                    }
+                }
+            });
+            
+            const latencyCtx = document.getElementById('latencyChart').getContext('2d');
+            latencyChart = new Chart(latencyCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Avg Latency (ms)',
+                        data: [],
+                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y} ms`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const modelIndex = elements[0].index;
+                            const modelName = latencyChart.data.labels[modelIndex];
+                            showDrilldownDetails(modelName);
+                        }
+                    }
+                }
+            });
+            
+            const fallbackCtx = document.getElementById('fallbackUsageChart').getContext('2d');
+            fallbackUsageChart = new Chart(fallbackCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Fallback Attempts',
+                        data: [],
+                        fill: false,
+                        borderColor: 'rgba(231, 76, 60, 0.6)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Fetch data from backend
+        async function fetchData() {
+            try {
+                const [healthRes, usageRes] = await Promise.all([
+                    fetch('/health'),
+                    fetch('/usage')
+                ]);
+                
+                const healthData = await healthRes.json();
+                const usageData = await usageRes.json();
+                
+                // Store full data for filtering
+                fullData = { healthData, usageData };
+                
+                return { healthData, usageData };
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Error fetching data from server');
+            }
+        }
+        
+        // Calculate token distribution from usage stats
+        function calculateTokenDistribution(usageStats) {
+            if (!usageStats || !usageStats.tokenDistributionByModel) return { labels: [], data: [] };
+            
+            const labels = [];
+            const data = [];
+            
+            for (const [model, tokens] of Object.entries(usageStats.tokenDistributionByModel)) {
+                labels.push(model);
+                data.push(tokens);
+            }
+            
+            return { labels, data };
+        }
+        
+        // Calculate success rates by model
+        function calculateSuccessRates(usageStats) {
+            if (!usageStats || !usageStats.successRateByModel) return { labels: [], data: [] };
+            
+            const labels = [];
+            const data = [];
+            
+            for (const [model, successRate] of Object.entries(usageStats.successRateByModel)) {
+                labels.push(model);
+                data.push(successRate);
+            }
+            
+            return { labels, data };
+        }
+        
+        // Generate fallback usage data
+        function generateFallbackUsageData(fallbackStats) {
+            // In a real implementation, this would come from tracking fallback events over time
+            // For now, we'll generate some sample data based on the stats
+            const labels = ['Today', 'Last 7 Days', 'Last 30 Days'];
+            const attempts = fallbackStats?.totalAttempts || 0;
+            const data = [attempts, Math.round(attempts * 1.5), Math.round(attempts * 2.5)]; // Sample data
+            
+            return { labels, data };
+        }
+        
+        // Format timestamp to human-readable format
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Never';
+            return new Date(timestamp).toLocaleString();
+        }
+        
+        // Populate model filter dropdown
+        function populateModelFilter(models) {
+            const modelFilter = document.getElementById('modelFilter');
+            // Clear existing options except "All Models"
+            modelFilter.innerHTML = '<option value="all" selected>All Models</option>';
+            
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelFilter.appendChild(option);
+            });
+        }
+        
+        // Apply filters to the data
+        function applyFilters() {
+            if (!fullData) return;
+            
+            const timeRange = document.getElementById('timeRange').value;
+            const modelFilter = document.getElementById('modelFilter').value;
+            const taskTypeFilter = document.getElementById('taskTypeFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+            
+            // For simplicity, we're currently just refreshing the data
+            // In a real implementation, we would filter the data based on selections
+            updateDashboard();
+        }
+        
+        // Show drilldown details for a model
+        function showDrilldownDetails(modelName) {
+            if (!fullData) return;
+            
+            const modal = document.getElementById('drilldownModal');
+            const content = document.getElementById('drilldownContent');
+            
+            // Find model in health data
+            const modelHealth = fullData.healthData.modelHealth.find(m => m.model === modelName);
+            
+            if (modelHealth) {
+                content.innerHTML = `
+                    <h3>Metrics for ${modelName}</h3>
+                    <div class="status-overview">
+                        <div class="card">
+                            <h3>Success Rate</h3>
+                            <div class="value">${(modelHealth.health.successRate * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="card">
+                            <h3>Avg Latency</h3>
+                            <div class="value">${modelHealth.health.avgResponseTime.toFixed(0)}ms</div>
+                        </div>
+                        <div class="card">
+                            <h3>Health Score</h3>
+                            <div class="value">${modelHealth.health.score.toFixed(2)}</div>
+                        </div>
+                        <div class="card">
+                            <h3>Status</h3>
+                            <div class="value">${modelHealth.health.healthy ? 'Active' : 'Inactive'}</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Recent Requests</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Tokens In/Out</th>
+                                <th>Cost</th>
+                                <th>Latency (ms)</th>
+                                <th>Status</th>
+                                <th>Task Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${fullData.usageData.recentActivity
+                              .filter(req => req.model === modelName)
+                              .slice(0, 5)
+                              .map(req => `
+                                <tr>
+                                    <td>${new Date(req.timestamp).toLocaleString()}</td>
+                                    <td>${req.tokensIn}/${req.tokensOut}</td>
+                                    <td>$${req.estimatedCost.toFixed(6)}</td>
+                                    <td>${req.duration}</td>
+                                    <td>${req.status}</td>
+                                    <td>${req.taskType}</td>
+                                </tr>
+                              `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                content.innerHTML = `<p>No detailed data available for ${modelName}</p>`;
+            }
+            
+            modal.style.display = 'block';
+        }
+        
+        // Close drilldown modal
+        function closeDrilldownModal() {
+            document.getElementById('drilldownModal').style.display = 'none';
+        }
+        
+        // Export data as JSON
+        function exportData() {
+            if (!fullData) {
+                alert('No data available to export');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(fullData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `llm_control_plane_data_${new Date().toISOString().slice(0, 19)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        // Update dashboard with new data
+        async function updateDashboard() {
+            const { healthData, usageData } = await fetchData();
+            
+            if (!healthData || !usageData) return;
+            
+            // Populate model filter
+            const allModels = [...new Set([...healthData.activeModels, ...Object.keys(usageData.stats.modelDistribution)])];
+            populateModelFilter(allModels);
+            
+            // Update overview stats
+            document.getElementById('totalRequests').textContent = usageData.stats.totalRequests || 0;
+            document.getElementById('currentTokens').textContent = healthData.currentTokensUsed || 0;
+            document.getElementById('budgetLimit').textContent = healthData.budgetLimit || 'Unlimited';
+            
+            const budgetExceeded = healthData.budgetExceeded;
+            const budgetStatusEl = document.getElementById('budgetStatus');
+            budgetStatusEl.textContent = budgetExceeded ? 'EXCEEDED' : 'ACTIVE';
+            budgetStatusEl.style.color = budgetExceeded ? '#e74c3c' : '#2ecc71';
+            
+            // Update fallback statistics
+            if (healthData.fallbackStats) {
+                document.getElementById('fallbackAttempts').textContent = healthData.fallbackStats.totalAttempts;
+                document.getElementById('fallbackSuccessRate').textContent = 
+                    `${healthData.fallbackStats.successRate ? healthData.fallbackStats.successRate.toFixed(1) : '0'}%`;
+                document.getElementById('lastFallback').textContent = 
+                    formatTimestamp(healthData.fallbackStats.lastFallbackTime);
+            }
+            
+            // Update fallback chain
+            const fallbackList = document.getElementById('fallbackList');
+            fallbackList.innerHTML = '';
+            if (healthData.activeModels && Array.isArray(healthData.activeModels)) {
+                healthData.activeModels.forEach((model, index) => {
+                    const chainItem = document.createElement('div');
+                    chainItem.className = 'chain-item';
+                    
+                    const health = healthData.modelHealth.find(h => h.model === model)?.health;
+                    const healthText = health ? 
+                        (health.healthy ? 'Healthy' : 'Unhealthy') : 
+                        'Unknown';
+                        
+                    chainItem.innerHTML = `
+                        <span><span class="chain-index">${index + 1}</span> ${model}</span>
+                        <span>${healthText}</span>
+                    `;
+                    
+                    fallbackList.appendChild(chainItem);
+                });
+            }
+            
+            // Update model status cards
+            const modelsContainer = document.querySelector('.models-status');
+            modelsContainer.innerHTML = '';
+            
+            if (healthData.modelHealth) {
+                healthData.modelHealth.forEach(modelHealth => {
+                    const card = document.createElement('div');
+                    card.className = 'model-card';
+                    card.onclick = () => showDrilldownDetails(modelHealth.model);
+                    
+                    const healthStatus = modelHealth.health.healthy ? 
+                        'healthy' : 'unhealthy';
+                        
+                    card.innerHTML = `
+                        <div class="model-header">
+                            <div class="model-name">${modelHealth.model}</div>
+                            <div class="health-indicator ${healthStatus}"></div>
+                        </div>
+                        <div class="model-stats">
+                            <div class="stat">
+                                <div class="stat-value">${modelHealth.health.successRate ? (modelHealth.health.successRate * 100).toFixed(1) : 'N/A'}%</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${modelHealth.health.avgResponseTime ? modelHealth.health.avgResponseTime.toFixed(0) : 'N/A'}ms</div>
+                                <div class="stat-label">Avg Latency</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${modelHealth.health.score ? modelHealth.health.score.toFixed(2) : 'N/A'}</div>
+                                <div class="stat-label">Health Score</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${modelHealth.health.healthy ? 'Active' : 'Inactive'}</div>
+                                <div class="stat-label">Status</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    modelsContainer.appendChild(card);
+                });
+            }
+            
+            // Update token distribution chart
+            const tokenDist = calculateTokenDistribution(usageData.stats);
+            tokenDistributionChart.data.labels = tokenDist.labels;
+            tokenDistributionChart.data.datasets[0].data = tokenDist.data;
+            tokenDistributionChart.update();
+            
+            // Update success rate chart
+            const successRates = calculateSuccessRates(usageData.stats);
+            successRateChart.data.labels = successRates.labels;
+            successRateChart.data.datasets[0].data = successRates.data;
+            successRateChart.update();
+            
+            // Update latency chart
+            if (latencyChart && healthData.modelHealth) {
+                const models = healthData.modelHealth.map(h => h.model);
+                const latencies = healthData.modelHealth.map(h => 
+                    h.health.avgResponseTime ? h.health.avgResponseTime : 0
+                );
+                
+                latencyChart.data.labels = models;
+                latencyChart.data.datasets[0].data = latencies;
+                latencyChart.update();
+            }
+            
+            // Update fallback usage chart
+            const fallbackData = generateFallbackUsageData(healthData.fallbackStats);
+            fallbackUsageChart.data.labels = fallbackData.labels;
+            fallbackUsageChart.data.datasets[0].data = fallbackData.data;
+            fallbackUsageChart.update();
+            
+            // Update recent requests table
+            const tableBody = document.getElementById('requestsTableBody');
+            tableBody.innerHTML = '';
+            
+            const recentRequests = usageData.recentActivity || [];
+            recentRequests.slice(0, 10).forEach(request => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${new Date(request.timestamp).toLocaleString()}</td>
+                    <td>${request.model}</td>
+                    <td>${request.tokensIn}/${request.tokensOut}</td>
+                    <td>$${request.estimatedCost.toFixed(6)}</td>
+                    <td>${request.duration}</td>
+                    <td>${request.status}</td>
+                    <td>${request.taskType}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Refresh button handler
+        function refreshData() {
+            updateDashboard();
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            updateDashboard();
+            
+            // Refresh data every 30 seconds
+            setInterval(updateDashboard, 30000);
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('drilldownModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+        });
+    </script>
+</body>
+</html>

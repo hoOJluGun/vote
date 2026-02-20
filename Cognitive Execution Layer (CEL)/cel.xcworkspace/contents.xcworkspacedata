@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "container:">
+   </FileRef>
+   <FileRef
+      location = "group:orchestration-engine.js">
+   </FileRef>
+   <FileRef
+      location = "group:production-server 2.js">
+   </FileRef>
+   <FileRef
+      location = "group:cost-optimizer 2.js">
+   </FileRef>
+   <FileRef
+      location = "group:cognitive-workspace-core.js">
+   </FileRef>
+   <FileRef
+      location = "group:README 2.md">
+   </FileRef>
+   <FileRef
+      location = "group:package 2.json">
+   </FileRef>
+   <FileRef
+      location = "group:project-knowledge-graph.js">
+   </FileRef>
+   <FileRef
+      location = "group:virtual-sandbox.js">
+   </FileRef>
+   <FileRef
+      location = "group:evolution-engine.js">
+   </FileRef>
+   <FileRef
+      location = "group:anti-stagnation-engine.js">
+   </FileRef>
+   <FileRef
+      location = "group:stability-engine.js">
+   </FileRef>
+   <FileRef
+      location = "group:constraint-solver.js">
+   </FileRef>
+   <FileRef
+      location = "group:temporal-simulator.js">
+   </FileRef>
+   <FileRef
+      location = "group:mutation-ledger.js">
+   </FileRef>
+   <FileRef
+      location = "group:economic-resilience.js">
+   </FileRef>
+</Workspace>
