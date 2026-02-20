@@ -441,15 +441,35 @@ export class SecretsManager {
   constructor(options = {}) {
     this.backend = options.backend || 'env';
     this.keychain = null;
+    this.vault = null;
     this.cache = new Map();
+    this.options = options;
   }
 
   /**
    * Initialize secrets manager
    */
   async initialize() {
-    if (this.backend === 'keychain') {
-      this.keychain = new KeychainManager();
+    switch (this.backend) {
+      case 'keychain':
+        this.keychain = new KeychainManager();
+        break;
+      case 'vault':
+        const { VaultSecretsManager } = await import('../security/vault-manager.js');
+        this.vault = new VaultSecretsManager({
+          address: process.env.VAULT_ADDR || this.options.vaultAddress,
+          authMethod: process.env.VAULT_AUTH_METHOD || this.options.vaultAuthMethod || 'token',
+          roleId: process.env.VAULT_ROLE_ID || this.options.vaultRoleId,
+          secretId: process.env.VAULT_SECRET_ID || this.options.vaultSecretId,
+          token: process.env.VAULT_TOKEN || this.options.vaultToken,
+          mountPath: process.env.VAULT_MOUNT_PATH || this.options.vaultMountPath || 'secret',
+          namespace: process.env.VAULT_NAMESPACE || this.options.vaultNamespace
+        });
+        await this.vault.authenticate();
+        break;
+      case 'env':
+        // No additional initialization needed
+        break;
     }
   }
 
@@ -467,6 +487,20 @@ export class SecretsManager {
     switch (this.backend) {
       case 'keychain':
         key = await this.keychain?.getApiKey(provider);
+        break;
+      case 'vault':
+        // Try to get from Vault using standardized path
+        const vaultPath = `cel/${provider}/api_key`;
+        key = await this.vault?.getSecret(vaultPath);
+        
+        // Fallback to environment variable if Vault fails
+        if (!key) {
+          key = process.env[`${provider.toUpperCase()}_API_KEY`] ||
+                process.env[`${provider.toUpperCase()}_KEY`];
+          if (key) {
+            console.warn(`⚠️ Using environment variable fallback for ${provider} API key`);
+          }
+        }
         break;
       case 'env':
         key = process.env[`${provider.toUpperCase()}_API_KEY`] ||
@@ -489,6 +523,10 @@ export class SecretsManager {
       case 'keychain':
         await this.keychain?.storeApiKey(provider, key);
         break;
+      case 'vault':
+        const vaultPath = `cel/${provider}/api_key`;
+        await this.vault?.setSecret(vaultPath, key);
+        break;
       case 'env':
         throw new Error('Cannot set environment variables at runtime');
     }
@@ -501,6 +539,53 @@ export class SecretsManager {
    */
   clearCache() {
     this.cache.clear();
+    if (this.vault) {
+      this.vault.clearCache();
+    }
+  }
+
+  /**
+   * Get arbitrary secret (Vault only)
+   * @param {string} path - Secret path in Vault
+   * @returns {Promise<string|null>} Secret value
+   */
+  async getSecret(path) {
+    if (this.backend !== 'vault') {
+      throw new Error('getSecret is only available with Vault backend');
+    }
+    
+    return await this.vault?.getSecret(path);
+  }
+
+  /**
+   * Set arbitrary secret (Vault only)
+   * @param {string} path - Secret path in Vault
+   * @param {string} value - Secret value
+   * @returns {Promise<void>}
+   */
+  async setSecret(path, value) {
+    if (this.backend !== 'vault') {
+      throw new Error('setSecret is only available with Vault backend');
+    }
+    
+    return await this.vault?.setSecret(path, value);
+  }
+
+  /**
+   * Health check for the secrets backend
+   * @returns {Promise<Object>} Health status
+   */
+  async healthCheck() {
+    switch (this.backend) {
+      case 'vault':
+        return await this.vault?.healthCheck() || { healthy: false, error: 'Vault not initialized' };
+      case 'keychain':
+        return { healthy: !!this.keychain, backend: 'keychain' };
+      case 'env':
+        return { healthy: true, backend: 'environment', note: 'Using environment variables' };
+      default:
+        return { healthy: false, error: 'Unknown backend' };
+    }
   }
 }
 
