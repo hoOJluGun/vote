@@ -249,6 +249,185 @@ export class VaultSecretsManager {
   }
 
   /**
+   * Encrypt data using Vault Transit
+   * @param {string} keyName - Transit key name
+   * @param {string} plaintext - Data to encrypt (base64 encoded)
+   * @param {Object} options - Encryption options
+   * @returns {Promise<string>} Encrypted ciphertext
+   */
+  async transitEncrypt(keyName, plaintext, options = {}) {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.post(`/v1/transit/encrypt/${keyName}`, {
+        plaintext: Buffer.from(plaintext).toString('base64'),
+        context: options.context ? Buffer.from(options.context).toString('base64') : undefined,
+        key_version: options.keyVersion,
+        nonce: options.nonce
+      });
+
+      console.log(`🔐 Encrypted data with Vault Transit key: ${keyName}`);
+      return response.data.data.ciphertext;
+    } catch (error) {
+      this._handleVaultError(error, 'transitEncrypt');
+      throw error;
+    }
+  }
+
+  /**
+   * Decrypt data using Vault Transit
+   * @param {string} keyName - Transit key name
+   * @param {string} ciphertext - Encrypted data
+   * @param {Object} options - Decryption options
+   * @returns {Promise<string>} Decrypted plaintext
+   */
+  async transitDecrypt(keyName, ciphertext, options = {}) {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.post(`/v1/transit/decrypt/${keyName}`, {
+        ciphertext: ciphertext,
+        context: options.context ? Buffer.from(options.context).toString('base64') : undefined
+      });
+
+      const plaintext = Buffer.from(response.data.data.plaintext, 'base64').toString();
+      console.log(`🔓 Decrypted data with Vault Transit key: ${keyName}`);
+      return plaintext;
+    } catch (error) {
+      this._handleVaultError(error, 'transitDecrypt');
+      throw error;
+    }
+  }
+
+  /**
+   * Generate data key using Vault Transit
+   * @param {string} keyName - Transit key name
+   * @param {'plaintext'|'wrapped'} keyType - Type of key to generate
+   * @param {Object} options - Key generation options
+   * @returns {Promise<Object>} Generated key data
+   */
+  async transitGenerateDataKey(keyName, keyType = 'plaintext', options = {}) {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.post(`/v1/transit/datakey/${keyType}/${keyName}`, {
+        context: options.context ? Buffer.from(options.context).toString('base64') : undefined,
+        bits: options.bits || 256,
+        nonce: options.nonce
+      });
+
+      console.log(`🔑 Generated ${keyType} data key with Vault Transit: ${keyName}`);
+      return {
+        plaintext: keyType === 'plaintext' ? 
+          Buffer.from(response.data.data.plaintext, 'base64').toString('hex') : null,
+        ciphertext: response.data.data.ciphertext
+      };
+    } catch (error) {
+      this._handleVaultError(error, 'transitGenerateDataKey');
+      throw error;
+    }
+  }
+
+  /**
+   * Create new encryption key in Transit
+   * @param {string} keyName - Key name
+   * @param {Object} options - Key creation options
+   * @returns {Promise<void>}
+   */
+  async transitCreateKey(keyName, options = {}) {
+    await this._ensureAuthenticated();
+
+    try {
+      await this.client.post(`/v1/transit/keys/${keyName}`, {
+        type: options.type || 'aes256-gcm96',
+        exportable: options.exportable || false,
+        allow_plaintext_backup: options.allowPlaintextBackup || false,
+        auto_rotate_period: options.autoRotatePeriod || 0
+      });
+
+      console.log(`🗝️ Created Vault Transit key: ${keyName}`);
+    } catch (error) {
+      this._handleVaultError(error, 'transitCreateKey');
+      throw error;
+    }
+  }
+
+  /**
+   * Rotate encryption key version
+   * @param {string} keyName - Key name
+   * @returns {Promise<void>}
+   */
+  async transitRotateKey(keyName) {
+    await this._ensureAuthenticated();
+
+    try {
+      await this.client.post(`/v1/transit/keys/${keyName}/rotate`);
+      console.log(`🔄 Rotated Vault Transit key: ${keyName}`);
+    } catch (error) {
+      this._handleVaultError(error, 'transitRotateKey');
+      throw error;
+    }
+  }
+
+  /**
+   * Get key information
+   * @param {string} keyName - Key name
+   * @returns {Promise<Object>} Key metadata
+   */
+  async transitReadKey(keyName) {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.get(`/v1/transit/keys/${keyName}`);
+      return response.data.data;
+    } catch (error) {
+      this._handleVaultError(error, 'transitReadKey');
+      throw error;
+    }
+  }
+
+  /**
+   * List available keys
+   * @returns {Promise<string[]>} Array of key names
+   */
+  async transitListKeys() {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.get('/v1/transit/keys?list=true');
+      return response.data.data.keys || [];
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return [];
+      }
+      this._handleVaultError(error, 'transitListKeys');
+      throw error;
+    }
+  }
+
+  /**
+   * Rewrap ciphertext with latest key version
+   * @param {string} keyName - Key name
+   * @param {string[]} ciphertexts - Array of ciphertexts to rewrap
+   * @returns {Promise<string[]>} Rewrapped ciphertexts
+   */
+  async transitRewrap(keyName, ciphertexts) {
+    await this._ensureAuthenticated();
+
+    try {
+      const response = await this.client.post(`/v1/transit/rewrap/${keyName}`, {
+        ciphertext: ciphertexts
+      });
+
+      console.log(`🔁 Rewrapped ${ciphertexts.length} ciphertexts with key: ${keyName}`);
+      return response.data.data.rewrap_results.map(r => r.ciphertext);
+    } catch (error) {
+      this._handleVaultError(error, 'transitRewrap');
+      throw error;
+    }
+  }
+
+  /**
    * Health check Vault connectivity
    * @returns {Promise<{healthy: boolean, version?: string, reachable: boolean}>}
    */
