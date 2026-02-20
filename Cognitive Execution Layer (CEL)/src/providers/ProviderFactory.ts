@@ -1,43 +1,78 @@
 /**
  * Provider Factory - Creates and manages LLM providers with fallback chain
- * @module src/providers/provider-factory
+ * Implements TypeScript interfaces and enhanced fallback logic
  */
 
-import { OpenRouterProvider } from './openrouter-provider.js';
-import { OllamaProvider } from './ollama-provider.js';
-import { TextGenerationWebUIAdapter } from './adapters/textgeneration-webui-adapter.js';
+import { LLMProvider, CompletionRequest, CompletionResponse, StreamChunk, HealthStatus, ModelInfo, CostEstimate } from './LLMProvider.js';
+import { OpenRouterAdapter } from './OpenRouterAdapter.js';
+import { OllamaAdapter } from './OllamaAdapter.js';
+import { TextGenerationWebUIAdapter } from './TextGenerationWebUIAdapter.js';
 import { SecretsManager } from '../../security/security-framework.js';
 
+export interface ProviderConfig {
+  apiKey?: string;
+  baseUrl?: string;
+  defaultModel?: string;
+  timeout?: number;
+  maxRetries?: number;
+}
+
+export interface ProviderFactoryConfig {
+  openrouter?: ProviderConfig;
+  ollama?: ProviderConfig;
+  tgwebui?: ProviderConfig;
+  preferLocal?: boolean;
+  fallbackOrder?: string[];
+}
+
+export interface ProviderMetrics {
+  requests: number;
+  successes: number;
+  failures: number;
+  avgLatency?: number;
+}
+
+export interface FactoryMetrics {
+  totalRequests: number;
+  fallbacksUsed: number;
+  fallbackRate: number;
+  providers: Record<string, ProviderMetrics>;
+}
+
+export interface CircuitBreakerState {
+  failures: number;
+  openUntil: number;
+}
+
 /**
- * Provider Factory
- * Manages multiple LLM providers with automatic fallback
+ * Enhanced Provider Factory with circuit breaker and retry logic
  */
 export class ProviderFactory {
-  constructor(options = {}) {
-    this.providers = new Map();
-    this.fallbackChain = [];
+  private providers = new Map<string, LLMProvider>();
+  private fallbackChain: string[] = [];
+  private secretsManager: SecretsManager;
+  private circuitBreaker = new Map<string, CircuitBreakerState>();
+  private metrics = {
+    totalRequests: 0,
+    fallbacksUsed: 0,
+    providerStats: new Map<string, ProviderMetrics>(),
+  };
+
+  constructor(options: { secretsManager?: SecretsManager } = {}) {
     this.secretsManager = options.secretsManager || new SecretsManager({ backend: 'env' });
-    this.circuitBreaker = new Map();
-    this.metrics = {
-      totalRequests: 0,
-      fallbacksUsed: 0,
-      providerStats: new Map(),
-    };
   }
 
   /**
    * Create a provider adapter by name
-   * @param {string} providerName
-   * @param {Object} config
    */
-  create(providerName, config = {}) {
+  create(providerName: string, config: ProviderConfig = {}): LLMProvider {
     switch (providerName) {
       case 'openrouter':
-        return new OpenRouterProvider(config);
+        return new OpenRouterAdapter(config as { apiKey: string; baseUrl?: string; defaultModel?: string });
       case 'ollama':
-        return new OllamaProvider(config);
+        return new OllamaAdapter(config as { baseUrl?: string; defaultModel?: string });
       case 'tgwebui':
-        return new TextGenerationWebUIAdapter(config);
+        return new TextGenerationWebUIAdapter(config as { baseUrl: string; defaultModel?: string });
       default:
         throw new Error(`Unknown provider: ${providerName}`);
     }
@@ -45,9 +80,8 @@ export class ProviderFactory {
 
   /**
    * Initialize providers from configuration
-   * @param {Object} config - Provider configuration
    */
-  async initialize(config) {
+  async initialize(config: ProviderFactoryConfig): Promise<void> {
     console.log('🔧 Initializing Provider Factory...');
 
     // Initialize secrets manager
@@ -56,8 +90,7 @@ export class ProviderFactory {
     // Initialize Ollama (local, free) first if configured
     if (config.ollama) {
       try {
-        const ollamaConfig = { ...config.ollama };
-        const ollama = new OllamaProvider(ollamaConfig);
+        const ollama = this.create('ollama', config.ollama);
         const health = await ollama.healthCheck();
 
         if (health.healthy) {
@@ -71,7 +104,7 @@ export class ProviderFactory {
         } else {
           console.warn(`⚠️ Ollama not available: ${health.error}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`⚠️ Failed to initialize Ollama: ${error.message}`);
       }
     }
@@ -89,7 +122,7 @@ export class ProviderFactory {
         if (!openrouterConfig.apiKey) {
           console.warn('⚠️ OpenRouter API key not found. Set OPENROUTER_API_KEY env var or use Keychain.');
         } else {
-          const openrouter = new OpenRouterProvider(openrouterConfig);
+          const openrouter = this.create('openrouter', openrouterConfig);
           this.providers.set('openrouter', openrouter);
           this.metrics.providerStats.set('openrouter', {
             requests: 0,
@@ -98,7 +131,7 @@ export class ProviderFactory {
           });
           console.log('✅ OpenRouter provider initialized');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`⚠️ Failed to initialize OpenRouter: ${error.message}`);
       }
     }
@@ -106,8 +139,7 @@ export class ProviderFactory {
     // Initialize TextGenerationWebUI (self-hosted) if configured
     if (config.tgwebui) {
       try {
-        const tgConfig = { ...config.tgwebui };
-        const tgwebui = new TextGenerationWebUIAdapter(tgConfig);
+        const tgwebui = this.create('tgwebui', config.tgwebui);
         const health = await tgwebui.healthCheck();
 
         if (health.healthy) {
@@ -121,7 +153,7 @@ export class ProviderFactory {
         } else {
           console.warn(`⚠️ TextGenerationWebUI not available: ${health.error}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`⚠️ Failed to initialize TextGenerationWebUI: ${error.message}`);
       }
     }
@@ -134,9 +166,8 @@ export class ProviderFactory {
 
   /**
    * Build fallback chain based on configuration and health
-   * @param {Object} config - Configuration
    */
-  buildFallbackChain(config) {
+  private buildFallbackChain(config: ProviderFactoryConfig): void {
     this.fallbackChain = [];
 
     // Prefer local providers first (free!)
@@ -164,53 +195,70 @@ export class ProviderFactory {
 
   /**
    * Get a provider by name
-   * @param {string} name - Provider name
-   * @returns {Object|null} Provider instance
    */
-  getProvider(name) {
+  getProvider(name: string): LLMProvider | null {
     return this.providers.get(name) || null;
   }
 
   /**
    * Get the fallback chain
-   * @returns {Array<string>} Fallback chain
    */
-  getFallbackChain() {
+  getFallbackChain(): string[] {
     return [...this.fallbackChain];
   }
 
   /**
    * Execute with automatic fallback
-   * @param {Function} operation - Operation to execute
-   * @param {string} preferredProvider - Preferred provider
-   * @returns {Promise<Object>} Result
+   * Overload 1: Execute operation function with fallback
    */
-  async executeWithFallback(operation, preferredProvider = null) {
-    // Backward compat overload:
-    // - (operationFn, preferredProvider)
-    // - (requestObj, providersArray)
-    if (typeof operation !== 'function') {
-      return this.executeRequestWithFallback(operation, preferredProvider);
+  async executeWithFallback<T>(
+    operation: (provider: LLMProvider) => Promise<T>,
+    preferredProvider?: string
+  ): Promise<T>;
+
+  /**
+   * Execute with automatic fallback
+   * Overload 2: Execute completion request with fallback
+   */
+  async executeWithFallback(
+    request: CompletionRequest,
+    providers?: string[]
+  ): Promise<CompletionResponse>;
+
+  async executeWithFallback<T>(
+    operationOrRequest: ((provider: LLMProvider) => Promise<T>) | CompletionRequest,
+    preferredOrProviders?: string | string[]
+  ): Promise<T | CompletionResponse> {
+    // Overload 2: Execute completion request
+    if (typeof operationOrRequest !== 'function') {
+      return this.executeRequestWithFallback(operationOrRequest as CompletionRequest, preferredOrProviders as string[]);
     }
 
+    // Overload 1: Execute operation function
     this.metrics.totalRequests++;
 
     // Build chain with preferred provider first
     let chain = [...this.fallbackChain];
-    if (preferredProvider && this.providers.has(preferredProvider)) {
+    if (preferredOrProviders && typeof preferredOrProviders === 'string' && this.providers.has(preferredOrProviders)) {
       chain = [
-        preferredProvider,
-        ...chain.filter(p => p !== preferredProvider),
+        preferredOrProviders,
+        ...chain.filter(p => p !== preferredOrProviders),
       ];
     }
 
-    const errors = [];
+    const errors: Array<{ provider: string; error: Error }> = [];
 
     for (const providerName of chain) {
       const provider = this.providers.get(providerName);
       if (!provider) continue;
 
       try {
+        // Check circuit breaker
+        if (this.isCircuitOpen(providerName)) {
+          console.warn(`⚠️ Provider ${providerName} circuit is open, skipping`);
+          continue;
+        }
+
         // Check health before using
         const health = await provider.healthCheck();
         if (!health.healthy) {
@@ -219,16 +267,18 @@ export class ProviderFactory {
         }
 
         // Execute operation
-        const result = await operation(provider);
+        const result = await operationOrRequest(provider);
 
         // Update metrics
         this.updateProviderMetrics(providerName, true);
+        this.onCircuitSuccess(providerName);
 
         return result;
       } catch (error) {
-        console.warn(`⚠️ Provider ${providerName} failed:`, error.message);
-        errors.push({ provider: providerName, error });
+        console.warn(`⚠️ Provider ${providerName} failed:`, (error as Error).message);
+        errors.push({ provider: providerName, error: error as Error });
         this.updateProviderMetrics(providerName, false);
+        this.onCircuitFailure(providerName);
       }
     }
 
@@ -242,17 +292,15 @@ export class ProviderFactory {
 
   /**
    * Execute a completion request with explicit fallback provider list
-   * @param {Object} request
-   * @param {string[]} providers
    */
-  async executeRequestWithFallback(request, providers = []) {
+  private async executeRequestWithFallback(request: CompletionRequest, providers: string[] = []): Promise<CompletionResponse> {
     this.metrics.totalRequests++;
 
     const chain = (providers && providers.length > 0)
       ? providers.filter(p => this.providers.has(p))
       : [...this.fallbackChain];
 
-    const errors = [];
+    const errors: Array<{ provider: string; error: Error }> = [];
 
     for (const providerName of chain) {
       const provider = this.providers.get(providerName);
@@ -273,7 +321,7 @@ export class ProviderFactory {
         this.onCircuitSuccess(providerName);
         return result;
       } catch (error) {
-        errors.push({ provider: providerName, error });
+        errors.push({ provider: providerName, error: error as Error });
         this.updateProviderMetrics(providerName, false);
         this.onCircuitFailure(providerName);
       }
@@ -286,35 +334,10 @@ export class ProviderFactory {
     );
   }
 
-  isCircuitOpen(providerName) {
-    const state = this.circuitBreaker.get(providerName);
-    if (!state) return false;
-    if (!state.openUntil) return false;
-    return Date.now() < state.openUntil;
-  }
-
-  onCircuitFailure(providerName) {
-    const state = this.circuitBreaker.get(providerName) || { failures: 0, openUntil: 0 };
-    state.failures += 1;
-    if (state.failures >= 5) {
-      state.openUntil = Date.now() + 30_000;
-    }
-    this.circuitBreaker.set(providerName, state);
-  }
-
-  onCircuitSuccess(providerName) {
-    if (this.circuitBreaker.has(providerName)) {
-      this.circuitBreaker.set(providerName, { failures: 0, openUntil: 0 });
-    }
-  }
-
   /**
    * Complete with fallback
-   * @param {Object} request - Completion request
-   * @param {string} preferredProvider - Preferred provider
-   * @returns {Promise<Object>} Completion response
    */
-  async complete(request, preferredProvider = null) {
+  async complete(request: CompletionRequest, preferredProvider?: string): Promise<CompletionResponse> {
     return this.executeWithFallback(
       async (provider) => provider.complete(request),
       preferredProvider
@@ -323,11 +346,8 @@ export class ProviderFactory {
 
   /**
    * Complete with streaming and fallback
-   * @param {Object} request - Completion request
-   * @param {string} preferredProvider - Preferred provider
-   * @yields {Object} Stream chunks
    */
-  async *completeStream(request, preferredProvider = null) {
+  async *completeStream(request: CompletionRequest, preferredProvider?: string): AsyncGenerator<StreamChunk> {
     // For streaming, we need to pick a provider upfront
     let chain = [...this.fallbackChain];
     if (preferredProvider && this.providers.has(preferredProvider)) {
@@ -346,14 +366,18 @@ export class ProviderFactory {
         if (!health.healthy) continue;
 
         // Stream from this provider
-        for await (const chunk of provider.completeStream(request)) {
-          yield chunk;
+        if (provider.completeStream) {
+          for await (const chunk of provider.completeStream(request)) {
+            yield chunk;
+          }
+        } else {
+          throw new Error(`Provider ${providerName} does not support streaming`);
         }
 
         this.updateProviderMetrics(providerName, true);
         return;
       } catch (error) {
-        console.warn(`⚠️ Streaming failed for ${providerName}:`, error.message);
+        console.warn(`⚠️ Streaming failed for ${providerName}:`, (error as Error).message);
         this.updateProviderMetrics(providerName, false);
       }
     }
@@ -362,98 +386,34 @@ export class ProviderFactory {
   }
 
   /**
-   * Get best provider for task
-   * @param {string} taskType - Task type
-   * @param {number} tokens - Estimated tokens
-   * @param {Object} constraints - Constraints (cost, latency, etc.)
-   * @returns {Object} Best provider and model
+   * Circuit breaker methods
    */
-  getBestProvider(taskType, tokens = 0, constraints = {}) {
-    const candidates = [];
-
-    for (const [name, provider] of this.providers) {
-      // Check constraints
-      if (constraints.maxCost !== undefined) {
-        const estimate = provider.estimateCost({ messages: [], maxTokens: tokens });
-        if (estimate.estimatedCost > constraints.maxCost) {
-          continue;
-        }
-      }
-
-      if (constraints.maxLatency !== undefined) {
-        const stats = this.metrics.providerStats.get(name);
-        if (stats && stats.avgLatency > constraints.maxLatency) {
-          continue;
-        }
-      }
-
-      // Score the provider
-      const score = this.scoreProvider(name, provider, taskType, tokens, constraints);
-      candidates.push({ name, provider, score });
-    }
-
-    // Sort by score (highest first)
-    candidates.sort((a, b) => b.score - a.score);
-
-    if (candidates.length === 0) {
-      return null;
-    }
-
-    return {
-      provider: candidates[0].provider,
-      providerName: candidates[0].name,
-      model: candidates[0].provider.getCurrentModel(),
-      score: candidates[0].score,
-    };
+  private isCircuitOpen(providerName: string): boolean {
+    const state = this.circuitBreaker.get(providerName);
+    if (!state) return false;
+    if (!state.openUntil) return false;
+    return Date.now() < state.openUntil;
   }
 
-  /**
-   * Score a provider for a task
-   * @param {string} name - Provider name
-   * @param {Object} provider - Provider instance
-   * @param {string} taskType - Task type
-   * @param {number} tokens - Estimated tokens
-   * @param {Object} constraints - Constraints
-   * @returns {number} Score
-   */
-  scoreProvider(name, provider, taskType, tokens, constraints) {
-    let score = 0;
-
-    // Prefer local providers (free)
-    if (provider.type === 'local') {
-      score += 100;
+  private onCircuitFailure(providerName: string): void {
+    const state = this.circuitBreaker.get(providerName) || { failures: 0, openUntil: 0 };
+    state.failures += 1;
+    if (state.failures >= 5) {
+      state.openUntil = Date.now() + 30_000; // 30 seconds
     }
+    this.circuitBreaker.set(providerName, state);
+  }
 
-    // Cost factor
-    const cost = provider.estimateCost({ messages: [], maxTokens: tokens });
-    score -= cost.estimatedCost * 1000; // Penalize expensive providers
-
-    // Reliability factor
-    const stats = this.metrics.providerStats.get(name);
-    if (stats && stats.requests > 0) {
-      const successRate = stats.successes / stats.requests;
-      score += successRate * 50;
+  private onCircuitSuccess(providerName: string): void {
+    if (this.circuitBreaker.has(providerName)) {
+      this.circuitBreaker.set(providerName, { failures: 0, openUntil: 0 });
     }
-
-    // Task-specific scoring
-    if (taskType === 'code' && provider.name === 'openrouter') {
-      score += 20; // OpenRouter has good code models
-    }
-
-    // Latency factor
-    if (stats && stats.avgLatency) {
-      score -= stats.avgLatency / 100; // Penalize slow providers
-    }
-
-    return score;
   }
 
   /**
    * Update provider metrics
-   * @param {string} name - Provider name
-   * @param {boolean} success - Whether request succeeded
    */
-  updateProviderMetrics(name, success) {
+  private updateProviderMetrics(name: string, success: boolean): void {
     const stats = this.metrics.providerStats.get(name);
     if (stats) {
       stats.requests++;
@@ -467,9 +427,8 @@ export class ProviderFactory {
 
   /**
    * Get factory metrics
-   * @returns {Object} Metrics
    */
-  getMetrics() {
+  getMetrics(): FactoryMetrics {
     return {
       totalRequests: this.metrics.totalRequests,
       fallbacksUsed: this.metrics.fallbacksUsed,
@@ -482,10 +441,9 @@ export class ProviderFactory {
 
   /**
    * Health check all providers
-   * @returns {Promise<Object>} Health status
    */
-  async healthCheckAll() {
-    const results = {};
+  async healthCheckAll(): Promise<{ healthy: boolean; providers: Record<string, HealthStatus>; fallbackChain: string[] }> {
+    const results: Record<string, HealthStatus> = {};
 
     for (const [name, provider] of this.providers) {
       results[name] = await provider.healthCheck();
@@ -500,10 +458,9 @@ export class ProviderFactory {
 
   /**
    * List all available models across providers
-   * @returns {Promise<Array>} All models
    */
-  async listAllModels() {
-    const models = [];
+  async listAllModels(): Promise<Array<ModelInfo & { provider: string; providerType: string }>> {
+    const models: Array<ModelInfo & { provider: string; providerType: string }> = [];
 
     for (const [name, provider] of this.providers) {
       try {
@@ -513,7 +470,7 @@ export class ProviderFactory {
           provider: name,
           providerType: provider.type,
         })));
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`Failed to list models for ${name}:`, error.message);
       }
     }
@@ -524,14 +481,14 @@ export class ProviderFactory {
   /**
    * Shutdown all providers
    */
-  async shutdown() {
+  async shutdown(): Promise<void> {
     for (const [name, provider] of this.providers) {
       try {
-        if (provider.shutdown) {
-          await provider.shutdown();
+        if ((provider as any).shutdown) {
+          await (provider as any).shutdown();
         }
         console.log(`🔌 Provider ${name} shut down`);
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`Failed to shutdown ${name}:`, error.message);
       }
     }
@@ -542,14 +499,12 @@ export class ProviderFactory {
 }
 
 // Singleton instance
-let factoryInstance = null;
+let factoryInstance: ProviderFactory | null = null;
 
 /**
  * Get or create the singleton factory instance
- * @param {Object} config - Configuration (only used on first call)
- * @returns {ProviderFactory} Factory instance
  */
-export async function getProviderFactory(config = null) {
+export async function getProviderFactory(config?: ProviderFactoryConfig): Promise<ProviderFactory> {
   if (!factoryInstance) {
     if (!config) {
       throw new Error('Configuration required for first initialization');
@@ -563,7 +518,7 @@ export async function getProviderFactory(config = null) {
 /**
  * Reset the singleton instance
  */
-export function resetProviderFactory() {
+export function resetProviderFactory(): void {
   if (factoryInstance) {
     factoryInstance.shutdown();
     factoryInstance = null;
